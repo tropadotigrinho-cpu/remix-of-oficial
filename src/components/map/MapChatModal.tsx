@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { D } from "@/components/ironguard/constants";
-import { MessageSquare, Mic, Send, X } from "lucide-react";
+import { Mic, Send, X } from "lucide-react";
 
 interface MapChatModalProps {
   open: boolean;
@@ -22,7 +22,7 @@ const MOCK_REPLIES: Record<string, string> = {
 
 export default function MapChatModal({ open, onClose }: MapChatModalProps) {
   const [messages, setMessages] = useState<ChatMsg[]>([
-    { role: "ai", text: "Iron Guard IA ativa. Como posso ajudar na sua rota?" },
+    { role: "ai", text: "Checking your route. A robbery was reported 200m ahead. Avoid Rua Augusta." },
   ]);
   const [input, setInput] = useState("");
   const [voiceMode, setVoiceMode] = useState(false);
@@ -64,8 +64,8 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
         style={{
           position: "absolute", inset: 0, zIndex: 30,
           background: voiceMode
-            ? "linear-gradient(180deg, transparent 0%, rgba(6,8,14,0.4) 40%, rgba(6,8,14,0.92) 100%)"
-            : "rgba(0,0,0,0.3)",
+            ? "linear-gradient(180deg, transparent 0%, rgba(6,8,14,0.5) 30%, rgba(6,8,14,0.95) 100%)"
+            : "rgba(0,0,0,0.35)",
           transition: "background 0.4s ease",
         }}
       />
@@ -77,14 +77,14 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
         left: 0,
         right: 0,
         zIndex: 31,
-        height: voiceMode ? "40%" : "auto",
-        maxHeight: voiceMode ? "40%" : "55%",
+        height: voiceMode ? "50%" : "auto",
+        maxHeight: voiceMode ? "50%" : "55%",
         display: "flex",
         flexDirection: "column",
-        borderRadius: "20px 20px 0 0",
+        borderRadius: "24px 24px 0 0",
         background: voiceMode
-          ? "linear-gradient(180deg, rgba(6,8,14,0.6) 0%, rgba(6,8,14,0.97) 100%)"
-          : "rgba(6,8,14,0.97)",
+          ? "linear-gradient(180deg, rgba(6,8,14,0.7) 0%, rgba(6,8,14,0.98) 100%)"
+          : "rgba(11,16,24,0.97)",
         border: `1px solid ${D.border2}`,
         borderBottom: "none",
         backdropFilter: "blur(24px)",
@@ -94,27 +94,31 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
         {/* Header */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "14px 16px 10px",
+          padding: "16px 18px 12px",
           borderBottom: voiceMode ? "none" : `1px solid ${D.border}`,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{
-              width: 7, height: 7, borderRadius: 4,
+              width: 8, height: 8, borderRadius: 4,
               background: D.green,
-              boxShadow: `0 0 8px ${D.green}`,
+              boxShadow: `0 0 10px ${D.green}80`,
             }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: D.sub, letterSpacing: 1 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: D.green, letterSpacing: 1.2 }}>
               IA OPERACIONAL ATIVA
             </span>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: "none", border: "none", cursor: "pointer",
-              color: D.sub, padding: 4,
+              width: 32, height: 32, borderRadius: 16,
+              background: "rgba(255,255,255,0.06)",
+              border: `1px solid ${D.border}`,
+              cursor: "pointer",
+              color: D.sub,
+              display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
@@ -127,32 +131,32 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
           }}>
             {/* Orb */}
             <div style={{
-              width: 100, height: 100, borderRadius: "50%",
-              background: `radial-gradient(circle, ${D.teal}44 0%, ${D.teal}11 60%, transparent 100%)`,
+              width: 120, height: 120, borderRadius: "50%",
+              background: `radial-gradient(circle, ${D.teal}55 0%, ${D.teal}18 50%, transparent 100%)`,
               boxShadow: orbPulse
-                ? `0 0 60px ${D.teal}55, 0 0 120px ${D.teal}22`
-                : `0 0 30px ${D.teal}33`,
+                ? `0 0 80px ${D.teal}55, 0 0 160px ${D.teal}22`
+                : `0 0 40px ${D.teal}33`,
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: "box-shadow 0.6s ease",
               animation: orbPulse ? "ig-orb-breathe 2s ease-in-out infinite" : "none",
             }}>
               <div style={{
-                width: 44, height: 44, borderRadius: "50%",
-                background: `radial-gradient(circle, ${D.teal} 0%, ${D.teal}88 100%)`,
-                boxShadow: `0 0 20px ${D.teal}88`,
+                width: 56, height: 56, borderRadius: "50%",
+                background: `radial-gradient(circle, ${D.teal} 0%, ${D.teal}99 100%)`,
+                boxShadow: `0 0 24px ${D.teal}88`,
               }} />
             </div>
 
             {/* Audio waveform bars */}
-            <div style={{ display: "flex", alignItems: "center", gap: 3, height: 32 }}>
-              {Array.from({ length: 12 }).map((_, i) => (
+            <div style={{ display: "flex", alignItems: "center", gap: 3, height: 28 }}>
+              {Array.from({ length: 9 }).map((_, i) => (
                 <div
                   key={i}
                   style={{
-                    width: 3, borderRadius: 2,
+                    width: 4, borderRadius: 2,
                     background: D.teal,
                     opacity: 0.5,
-                    height: orbPulse ? `${8 + Math.sin(i * 0.8) * 16}px` : "4px",
+                    height: orbPulse ? `${6 + Math.sin(i * 0.8) * 14}px` : "4px",
                     transition: "height 0.3s ease",
                     animation: orbPulse ? `ig-wave ${0.4 + i * 0.05}s ease-in-out infinite alternate` : "none",
                   }}
@@ -162,63 +166,108 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
 
             {/* Transcription */}
             <p style={{
-              fontSize: 13, color: D.sub, fontStyle: "italic",
-              textAlign: "center", margin: 0,
+              fontSize: 14, color: "rgba(238,242,250,0.7)", fontStyle: "italic",
+              textAlign: "center", margin: "8px 20px 0", lineHeight: 1.6,
+              maxWidth: 280,
             }}>
-              {orbPulse ? "Ouvindo..." : "Toque para falar"}
+              {orbPulse
+                ? '"Checking your route... A robbery was reported 200m ahead. Avoid Rua Augusta."'
+                : "Tap to speak or type..."}
             </p>
 
-            {/* Mic button */}
-            <button
-              onClick={toggleVoice}
-              style={{
-                marginTop: 8,
-                width: 52, height: 52, borderRadius: "50%",
-                background: orbPulse ? D.red : D.teal,
-                border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: `0 0 20px ${orbPulse ? D.red : D.teal}44`,
-                transition: "all 0.3s ease",
-              }}
-            >
-              <Mic size={22} color="#fff" />
-            </button>
+            {/* Bottom input bar in voice mode */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              marginTop: 16, width: "100%", maxWidth: 340,
+            }}>
+              <div style={{
+                flex: 1, padding: "12px 16px", borderRadius: 24,
+                background: "rgba(255,255,255,0.06)",
+                border: `1px solid ${D.border}`,
+                color: D.sub, fontSize: 13,
+              }}>
+                Tap to speak or type...
+              </div>
+              <button
+                onClick={toggleVoice}
+                style={{
+                  width: 44, height: 44, borderRadius: "50%",
+                  background: orbPulse ? D.red : "rgba(255,255,255,0.08)",
+                  border: `1px solid ${D.border}`,
+                  cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: orbPulse ? "#fff" : D.teal,
+                  transition: "all 0.3s ease",
+                }}
+              >
+                <Mic size={20} />
+              </button>
+              <button
+                style={{
+                  width: 44, height: 44, borderRadius: "50%",
+                  background: D.green, border: "none",
+                  cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <Send size={18} color="#fff" />
+              </button>
+            </div>
           </div>
         ) : (
           /* ── Text Chat ── */
           <>
             {/* Messages */}
             <div ref={scrollRef} style={{
-              flex: 1, overflowY: "auto", padding: "12px 16px",
-              display: "flex", flexDirection: "column", gap: 10,
-              minHeight: 120, maxHeight: 220,
+              flex: 1, overflowY: "auto", padding: "14px 18px",
+              display: "flex", flexDirection: "column", gap: 12,
+              minHeight: 100, maxHeight: 200,
             }}>
               {messages.map((msg, i) => (
                 <div key={i} style={{
-                  alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                  maxWidth: "80%",
-                  padding: "10px 14px",
-                  borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                  background: msg.role === "user" ? `${D.blue}22` : D.s2,
-                  border: `1px solid ${msg.role === "user" ? `${D.blue}33` : D.border}`,
-                  fontSize: 13, lineHeight: 1.5,
-                  color: D.text,
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "flex-start",
+                  flexDirection: msg.role === "user" ? "row-reverse" : "row",
                 }}>
-                  {msg.text}
+                  {msg.role === "ai" && (
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 12,
+                      background: D.s3,
+                      border: `1px solid ${D.border}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                      fontSize: 18,
+                    }}>
+                      🤖
+                    </div>
+                  )}
+                  <div style={{
+                    maxWidth: "78%",
+                    padding: "11px 15px",
+                    borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                    background: msg.role === "user" ? `${D.blue}18` : D.s2,
+                    border: `1px solid ${msg.role === "user" ? `${D.blue}25` : D.border}`,
+                    fontSize: 13, lineHeight: 1.55,
+                    color: D.text,
+                  }}>
+                    {msg.text}
+                  </div>
                 </div>
               ))}
             </div>
 
             {/* Quick chips */}
-            <div style={{ display: "flex", gap: 6, padding: "0 16px 8px", overflowX: "auto" }}>
+            <div style={{ display: "flex", gap: 8, padding: "0 18px 10px", overflowX: "auto" }}>
               {QUICK_CHIPS.map((chip) => (
                 <button
                   key={chip}
                   onClick={() => sendMessage(chip)}
                   style={{
-                    padding: "6px 12px", borderRadius: 20,
-                    background: D.s3, border: `1px solid ${D.border}`,
-                    color: D.sub, fontSize: 11, fontWeight: 600,
+                    padding: "7px 14px", borderRadius: 20,
+                    background: "rgba(255,255,255,0.04)",
+                    border: `1px solid ${D.border}`,
+                    color: D.sub, fontSize: 12, fontWeight: 500,
                     cursor: "pointer", whiteSpace: "nowrap",
                     fontFamily: "inherit",
                     transition: "all 0.2s",
@@ -231,18 +280,19 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
 
             {/* Input bar */}
             <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "10px 16px 16px",
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "12px 18px 18px",
               borderTop: `1px solid ${D.border}`,
             }}>
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-                placeholder="Fale com a IA Iron Guard..."
+                placeholder="Talk to Iron Guard AI..."
                 style={{
-                  flex: 1, padding: "10px 14px", borderRadius: 14,
-                  background: D.s2, border: `1px solid ${D.border}`,
+                  flex: 1, padding: "12px 16px", borderRadius: 24,
+                  background: "rgba(255,255,255,0.04)",
+                  border: `1px solid ${D.border}`,
                   color: D.text, fontSize: 13, outline: "none",
                   fontFamily: "inherit",
                 }}
@@ -250,8 +300,9 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
               <button
                 onClick={toggleVoice}
                 style={{
-                  width: 40, height: 40, borderRadius: 12,
-                  background: D.s3, border: `1px solid ${D.border}`,
+                  width: 42, height: 42, borderRadius: "50%",
+                  background: "rgba(255,255,255,0.06)",
+                  border: `1px solid ${D.border}`,
                   cursor: "pointer", display: "flex",
                   alignItems: "center", justifyContent: "center",
                   color: D.sub,
@@ -262,8 +313,8 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
               <button
                 onClick={() => sendMessage(input)}
                 style={{
-                  width: 40, height: 40, borderRadius: 12,
-                  background: D.blue, border: "none",
+                  width: 42, height: 42, borderRadius: "50%",
+                  background: D.green, border: "none",
                   cursor: "pointer", display: "flex",
                   alignItems: "center", justifyContent: "center",
                 }}
@@ -279,11 +330,11 @@ export default function MapChatModal({ open, onClose }: MapChatModalProps) {
       <style>{`
         @keyframes ig-orb-breathe {
           0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.08); }
+          50% { transform: scale(1.06); }
         }
         @keyframes ig-wave {
           0% { height: 4px; }
-          100% { height: 24px; }
+          100% { height: 20px; }
         }
       `}</style>
     </>

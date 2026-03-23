@@ -9,7 +9,6 @@ import { SP_CENTER } from "@/lib/mapConstants";
 import { DEFAULT_ON } from "@/components/ironguard/constants";
 
 const MapImersivo3D = lazy(() => import("./MapImersivo3D"));
-const MapTiler3DFallback = lazy(() => import("./MapTiler3DFallback"));
 
 interface MapOrchestratorProps {
   activeFilters?: string[];
@@ -37,10 +36,10 @@ export default function MapOrchestrator({
   const { geojson } = useMapAlerts(userPlan, userCoords, activeFilters);
 
   const handleCentralizar = useCallback(() => {
+    startTracking();
     if (userCoords) {
       mapCoreRef.current?.flyTo(userCoords);
     } else {
-      startTracking();
       mapCoreRef.current?.flyTo(SP_CENTER);
     }
   }, [userCoords, startTracking]);
@@ -86,11 +85,7 @@ export default function MapOrchestrator({
             </div>
           }
         >
-          {isPro ? (
-            <MapImersivo3D onExit={() => setModo("2d")} />
-          ) : (
-            <MapTiler3DFallback onExit={() => setModo("2d")} />
-          )}
+          <MapImersivo3D onExit={() => setModo("2d")} />
         </Suspense>
       )}
 
