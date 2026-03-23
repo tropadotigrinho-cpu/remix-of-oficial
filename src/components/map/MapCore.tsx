@@ -276,18 +276,51 @@ const MapCore = memo(
               },
             });
 
-            // Individual pins
+            // ── Gradient halos for serious alerts (roubo/assalto) ──
+            map.addSource("alert-pins-serious", {
+              type: "geojson",
+              data: { type: "FeatureCollection", features: [] },
+            });
+
+            map.addLayer({
+              id: "alert-serious-halo",
+              type: "circle",
+              source: "alert-pins-serious",
+              paint: {
+                "circle-radius": [
+                  "interpolate", ["linear"], ["zoom"],
+                  11, 30, 14, 60, 17, 90,
+                ],
+                "circle-color": ["get", "color"],
+                "circle-opacity": 0.18,
+                "circle-blur": 1,
+              },
+            });
+
+            // Individual pins — dark bg circle
             map.addLayer({
               id: "alert-unclustered",
               type: "circle",
               source: "alert-pins",
               filter: ["!", ["has", "point_count"]],
               paint: {
-                "circle-radius": 8,
-                "circle-color": ["get", "color"],
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "rgba(255,255,255,0.2)",
+                "circle-radius": 12,
+                "circle-color": "rgba(6,8,14,0.85)",
+                "circle-stroke-width": 0,
                 "circle-opacity": 0.9,
+              },
+            });
+
+            // Pin emoji icons
+            map.addLayer({
+              id: "alert-unclustered-icon",
+              type: "symbol",
+              source: "alert-pins",
+              filter: ["!", ["has", "point_count"]],
+              layout: {
+                "text-field": ["get", "icon"],
+                "text-size": 14,
+                "text-allow-overlap": true,
               },
             });
 
