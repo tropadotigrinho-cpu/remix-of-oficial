@@ -224,25 +224,6 @@ const MapCore = memo(
               },
             });
 
-            map.addLayer({
-              id: "zonas-risco-stroke",
-              type: "line",
-              source: "zonas-risco",
-              paint: {
-                "line-color": [
-                  "match",
-                  ["get", "nivel"],
-                  1, "#FFD000",
-                  2, "#FF7A00",
-                  3, "#FF3232",
-                  4, "#9D6FFF",
-                  5, "#8B0000",
-                  "#FF3232",
-                ],
-                "line-width": 1.5,
-                "line-opacity": 0.4,
-              },
-            });
 
             // ── LAYER 4: Alert pins (clustered) ──
             map.addSource("alert-pins", {
