@@ -1,5 +1,4 @@
 import { D } from "@/components/ironguard/constants";
-import { MessageSquare } from "lucide-react";
 
 interface MapControlsProps {
   modo: "2d" | "3d";
@@ -15,7 +14,6 @@ interface MapControlsProps {
 
 export default function MapControls({
   modo,
-  isPro,
   onToggle3D,
   onCentralizar,
   onToggleHeatmap,
@@ -25,96 +23,93 @@ export default function MapControls({
   onOpenChat,
 }: MapControlsProps) {
   const btnBase: React.CSSProperties = {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    background: "rgba(6,8,14,0.9)",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "rgba(11,16,24,0.85)",
     border: `1px solid ${D.border}`,
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    backdropFilter: "blur(12px)",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+    backdropFilter: "blur(16px)",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
     transition: "all 0.2s",
     fontFamily: "inherit",
     fontSize: 18,
     padding: 0,
+    color: "rgba(238,242,250,0.4)",
   };
+
+  const activeStyle = (color: string, active: boolean): React.CSSProperties =>
+    active
+      ? {
+          ...btnBase,
+          color,
+          background: `${color}12`,
+          border: `1px solid ${color}30`,
+          boxShadow: `0 0 12px ${color}18, 0 2px 8px rgba(0,0,0,0.3)`,
+        }
+      : btnBase;
 
   return (
     <div
       style={{
         position: "absolute",
-        right: 16,
+        right: 14,
         bottom: 80,
         zIndex: 10,
         display: "flex",
         flexDirection: "column",
-        gap: 8,
+        gap: 6,
       }}
     >
       {/* Compass */}
       <button
-        style={{ ...btnBase, color: D.sub }}
+        style={btnBase}
         onClick={onResetNorth}
         title="Norte"
       >
         <svg
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 20 20"
           style={{ transform: `rotate(${-compassBearing}deg)`, transition: "transform 0.3s" }}
         >
           <path d="M10 2L13 10L10 8L7 10L10 2Z" fill="#FF3232" />
-          <path d="M10 18L7 10L10 12L13 10L10 18Z" fill="rgba(238,242,250,0.3)" />
+          <path d="M10 18L7 10L10 12L13 10L10 18Z" fill="rgba(238,242,250,0.25)" />
         </svg>
       </button>
 
       {/* 3D Toggle */}
       <button
-        style={{
-          ...btnBase,
-          color: modo === "3d" ? D.blue : D.sub,
-          background: modo === "3d" ? `${D.blue}1A` : btnBase.background,
-          border: modo === "3d" ? `1px solid ${D.blue}40` : btnBase.border,
-          boxShadow: modo === "3d"
-            ? `0 0 20px ${D.blue}30, 0 4px 16px rgba(0,0,0,0.4)`
-            : btnBase.boxShadow,
-        }}
+        style={activeStyle(D.blue, modo === "3d")}
         onClick={onToggle3D}
         title="Modo 3D"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 3L2 8l10 5 10-5-10-5z" />
-          <path d="M2 16l10 5 10-5" />
-          <path d="M2 12l10 5 10-5" />
-        </svg>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>3D</span>
       </button>
 
       {/* Heatmap / Gradient toggle */}
       <button
-        style={{
-          ...btnBase,
-          color: heatmapActive ? D.red : D.sub,
-          background: heatmapActive ? `${D.red}1A` : btnBase.background,
-          border: heatmapActive ? `1px solid ${D.red}40` : btnBase.border,
-        }}
+        style={activeStyle(D.red, heatmapActive)}
         onClick={onToggleHeatmap}
         title={heatmapActive ? "Desativar raios" : "Ativar raios"}
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 22c-4.97 0-9-2.686-9-6v0c0-4 4.5-9.5 9-14 4.5 4.5 9 10 9 14v0c0 3.314-4.03 6-9 6z" />
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="12" cy="12" r="3" />
+          <circle cx="12" cy="12" r="7" opacity="0.5" />
+          <circle cx="12" cy="12" r="10" opacity="0.25" />
         </svg>
       </button>
 
-      {/* GPS / Centralize */}
+      {/* GPS */}
       <button
         style={{ ...btnBase, color: D.blue }}
         onClick={onCentralizar}
-        title="Centralizar"
+        title="Minha localização"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <circle cx="12" cy="12" r="3" />
           <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
         </svg>
@@ -124,9 +119,11 @@ export default function MapControls({
       <button
         style={{ ...btnBase, color: D.teal }}
         onClick={onOpenChat}
-        title="Chat de bordo"
+        title="Chat IA"
       >
-        <MessageSquare size={20} />
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
       </button>
     </div>
   );
