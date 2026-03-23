@@ -92,7 +92,7 @@ export default function MapImersivo3D({ onExit }: MapImersivo3DProps) {
               ],
               "fill-extrusion-height": ["get", "height"],
               "fill-extrusion-base": ["get", "min_height"],
-              "fill-extrusion-opacity": 0.9,
+              "fill-extrusion-opacity": 1.0,
             },
           },
           labelLayer?.id
