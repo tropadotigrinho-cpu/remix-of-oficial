@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, lazy, Suspense } from "react";
 import MapCore, { type MapCoreHandle } from "./MapCore";
 import MapControls from "./MapControls";
+import MapChatModal from "./MapChatModal";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { useMapAlerts } from "@/hooks/useMapAlerts";
@@ -22,6 +23,7 @@ export default function MapOrchestrator({
   const [modo, setModo] = useState<"2d" | "3d">("2d");
   const [heatmapActive, setHeatmapActive] = useState(true);
   const [compassBearing, setCompassBearing] = useState(0);
+  const [chatOpen, setChatOpen] = useState(false);
   const mapCoreRef = useRef<MapCoreHandle>(null);
 
   const userPlan = useUserPlan();
@@ -66,7 +68,6 @@ export default function MapOrchestrator({
 
   return (
     <>
-      {/* MapCore — ALWAYS mounted */}
       <MapCore
         ref={mapCoreRef}
         visible={modo === "2d"}
@@ -77,7 +78,6 @@ export default function MapOrchestrator({
         userCoords={userCoords}
       />
 
-      {/* 3D mode — Pro gets Mapbox, Free gets MapTiler fallback */}
       {modo === "3d" && (
         <Suspense
           fallback={
@@ -94,7 +94,6 @@ export default function MapOrchestrator({
         </Suspense>
       )}
 
-      {/* Floating controls */}
       <MapControls
         modo={modo}
         isPro={isPro}
@@ -104,7 +103,10 @@ export default function MapOrchestrator({
         heatmapActive={heatmapActive}
         compassBearing={compassBearing}
         onResetNorth={handleResetNorth}
+        onOpenChat={() => setChatOpen(true)}
       />
+
+      <MapChatModal open={chatOpen} onClose={() => setChatOpen(false)} />
     </>
   );
 }
