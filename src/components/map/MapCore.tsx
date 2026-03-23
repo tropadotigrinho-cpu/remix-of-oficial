@@ -398,6 +398,14 @@ const MapCore = memo(
 
           const pinSource = mapRef.current.getSource("alert-pins") as maplibregl.GeoJSONSource;
           pinSource?.setData(alertsGeoJSON);
+
+          // Feed serious alerts source (roubo/assalto only)
+          const seriousFeatures = alertsGeoJSON.features.filter((f) => {
+            const t = (f.properties as any)?.type;
+            return t === "roubo" || t === "assalto";
+          });
+          const seriousSource = mapRef.current.getSource("alert-pins-serious") as maplibregl.GeoJSONSource;
+          seriousSource?.setData({ type: "FeatureCollection", features: seriousFeatures });
         } catch {
           // sources may not exist yet
         }

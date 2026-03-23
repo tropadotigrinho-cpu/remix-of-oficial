@@ -1,4 +1,5 @@
 import { D } from "@/components/ironguard/constants";
+import { MessageSquare } from "lucide-react";
 
 interface MapControlsProps {
   modo: "2d" | "3d";
@@ -7,9 +8,9 @@ interface MapControlsProps {
   onCentralizar: () => void;
   onToggleHeatmap: () => void;
   heatmapActive: boolean;
-  onToggleLayers?: () => void;
   compassBearing?: number;
   onResetNorth?: () => void;
+  onOpenChat?: () => void;
 }
 
 export default function MapControls({
@@ -19,9 +20,9 @@ export default function MapControls({
   onCentralizar,
   onToggleHeatmap,
   heatmapActive,
-  onToggleLayers,
   compassBearing = 0,
   onResetNorth,
+  onOpenChat,
 }: MapControlsProps) {
   const btnBase: React.CSSProperties = {
     width: 44,
@@ -70,19 +71,6 @@ export default function MapControls({
         </svg>
       </button>
 
-      {/* Layers */}
-      <button
-        style={{ ...btnBase, color: D.sub }}
-        onClick={onToggleLayers}
-        title="Camadas"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5z" />
-          <path d="M2 17l10 5 10-5" />
-          <path d="M2 12l10 5 10-5" />
-        </svg>
-      </button>
-
       {/* 3D Toggle */}
       <button
         style={{
@@ -104,7 +92,7 @@ export default function MapControls({
         </svg>
       </button>
 
-      {/* Heatmap */}
+      {/* Heatmap / Gradient toggle */}
       <button
         style={{
           ...btnBase,
@@ -113,7 +101,7 @@ export default function MapControls({
           border: heatmapActive ? `1px solid ${D.red}40` : btnBase.border,
         }}
         onClick={onToggleHeatmap}
-        title="Heatmap"
+        title={heatmapActive ? "Desativar raios" : "Ativar raios"}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 22c-4.97 0-9-2.686-9-6v0c0-4 4.5-9.5 9-14 4.5 4.5 9 10 9 14v0c0 3.314-4.03 6-9 6z" />
@@ -122,10 +110,7 @@ export default function MapControls({
 
       {/* GPS / Centralize */}
       <button
-        style={{
-          ...btnBase,
-          color: D.blue,
-        }}
+        style={{ ...btnBase, color: D.blue }}
         onClick={onCentralizar}
         title="Centralizar"
       >
@@ -133,6 +118,15 @@ export default function MapControls({
           <circle cx="12" cy="12" r="3" />
           <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
         </svg>
+      </button>
+
+      {/* Chat de bordo */}
+      <button
+        style={{ ...btnBase, color: D.teal }}
+        onClick={onOpenChat}
+        title="Chat de bordo"
+      >
+        <MessageSquare size={20} />
       </button>
     </div>
   );
