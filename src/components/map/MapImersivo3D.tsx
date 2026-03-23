@@ -92,7 +92,7 @@ export default function MapImersivo3D({ onExit }: MapImersivo3DProps) {
               ],
               "fill-extrusion-height": ["get", "height"],
               "fill-extrusion-base": ["get", "min_height"],
-              "fill-extrusion-opacity": 0.9,
+              "fill-extrusion-opacity": 1.0,
             },
           },
           labelLayer?.id
@@ -243,19 +243,6 @@ export default function MapImersivo3D({ onExit }: MapImersivo3DProps) {
         </button>
       </div>
 
-      {/* Speed + Compass HUD */}
-      <div style={{ position: "absolute", bottom: 100, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", gap: 12, pointerEvents: "none" }}>
-        <div style={{ padding: "8px 18px", borderRadius: 14, background: "rgba(6,8,14,0.9)", border: `1px solid ${D.border}`, backdropFilter: "blur(12px)", textAlign: "center", minWidth: 64 }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: D.text, fontVariantNumeric: "tabular-nums" }}>{speed}</div>
-          <div style={{ fontSize: 9, color: D.sub, fontWeight: 600, letterSpacing: 1 }}>km/h</div>
-        </div>
-        <div style={{ padding: "8px 14px", borderRadius: 14, background: "rgba(6,8,14,0.9)", border: `1px solid ${D.border}`, backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg width="28" height="28" viewBox="0 0 20 20" style={{ transform: `rotate(${-bearing}deg)`, transition: "transform 0.3s" }}>
-            <path d="M10 2L13 10L10 8L7 10L10 2Z" fill="#FF3232" />
-            <path d="M10 18L7 10L10 12L13 10L10 18Z" fill="rgba(238,242,250,0.3)" />
-          </svg>
-        </div>
-      </div>
 
       {/* CSS animations */}
       <style>{`
