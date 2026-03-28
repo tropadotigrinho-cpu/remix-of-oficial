@@ -75,7 +75,6 @@ const MapCore = memo(
         const initMap = async () => {
           let style: string | maplibregl.StyleSpecification;
 
-          // Try cached/Supabase style first, fallback to MapTiler
           try {
             const cached = await getMapStyle();
             if (cached) {
@@ -118,23 +117,15 @@ const MapCore = memo(
               maxzoom: 14,
               paint: {
                 "heatmap-weight": [
-                  "interpolate",
-                  ["linear"],
-                  ["get", "votes"],
-                  0, 0,
-                  12, 1,
+                  "interpolate", ["linear"], ["get", "votes"],
+                  0, 0, 12, 1,
                 ],
                 "heatmap-intensity": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  11, 0.6,
-                  14, 1.2,
+                  "interpolate", ["linear"], ["zoom"],
+                  11, 0.6, 14, 1.2,
                 ],
                 "heatmap-color": [
-                  "interpolate",
-                  ["linear"],
-                  ["heatmap-density"],
+                  "interpolate", ["linear"], ["heatmap-density"],
                   0, "rgba(0,0,0,0)",
                   0.2, "rgba(255,100,0,0.3)",
                   0.4, "rgba(255,80,0,0.5)",
@@ -143,11 +134,8 @@ const MapCore = memo(
                   1, "rgba(255,0,0,0.9)",
                 ],
                 "heatmap-radius": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  11, 20,
-                  14, 40,
+                  "interpolate", ["linear"], ["zoom"],
+                  11, 20, 14, 40,
                 ],
                 "heatmap-opacity": 0.7,
               },
@@ -172,23 +160,13 @@ const MapCore = memo(
               source: "user-radius",
               paint: {
                 "fill-color": "#3D8EFF",
-                "fill-opacity": 0.05,
+                "fill-opacity": 0.04,
               },
             });
 
-            map.addLayer({
-              id: "user-radius-stroke",
-              type: "line",
-              source: "user-radius",
-              paint: {
-                "line-color": "#3D8EFF",
-                "line-width": 1.5,
-                "line-opacity": 0.3,
-                "line-dasharray": [3, 2],
-              },
-            });
+            // No stroke — clean radius
 
-            // ── LAYER 3: Zonas de risco (mock — circular) ──
+            // ── LAYER 3: Zonas de risco (gradient fill, no stroke) ──
             const zonasRisco: GeoJSON.FeatureCollection = {
               type: "FeatureCollection",
               features: [
@@ -211,8 +189,7 @@ const MapCore = memo(
               source: "zonas-risco",
               paint: {
                 "fill-color": [
-                  "match",
-                  ["get", "nivel"],
+                  "match", ["get", "nivel"],
                   1, "#FFD000",
                   2, "#FF7A00",
                   3, "#FF3232",
@@ -220,10 +197,9 @@ const MapCore = memo(
                   5, "#8B0000",
                   "#FF3232",
                 ],
-                "fill-opacity": 0.15,
+                "fill-opacity": 0.1,
               },
             });
-
 
             // ── LAYER 4: Alert pins (clustered) ──
             map.addSource("alert-pins", {
@@ -234,48 +210,7 @@ const MapCore = memo(
               clusterRadius: 50,
             });
 
-            // Cluster circles
-            map.addLayer({
-              id: "alert-clusters",
-              type: "circle",
-              source: "alert-pins",
-              filter: ["has", "point_count"],
-              paint: {
-                "circle-color": [
-                  "step",
-                  ["get", "point_count"],
-                  "#FF7A00",
-                  5, "#FF3232",
-                  10, "#FF2D78",
-                ],
-                "circle-radius": [
-                  "step",
-                  ["get", "point_count"],
-                  18,
-                  5, 24,
-                  10, 30,
-                ],
-                "circle-opacity": 0.85,
-                "circle-stroke-width": 0,
-              },
-            });
-
-            // Cluster count labels
-            map.addLayer({
-              id: "alert-cluster-count",
-              type: "symbol",
-              source: "alert-pins",
-              filter: ["has", "point_count"],
-              layout: {
-                "text-field": ["get", "point_count_abbreviated"],
-                "text-size": 12,
-              },
-              paint: {
-                "text-color": "#ffffff",
-              },
-            });
-
-            // ── Gradient halos for serious alerts (roubo/assalto) ──
+            // Gradient halos for serious alerts (roubo/assalto)
             map.addSource("alert-pins-serious", {
               type: "geojson",
               data: { type: "FeatureCollection", features: [] },
@@ -288,25 +223,78 @@ const MapCore = memo(
               paint: {
                 "circle-radius": [
                   "interpolate", ["linear"], ["zoom"],
-                  11, 35, 14, 70, 17, 100,
+                  11, 40, 14, 90, 17, 130,
                 ],
                 "circle-color": ["get", "color"],
-                "circle-opacity": 0.15,
-                "circle-blur": 1.2,
+                "circle-opacity": 0.12,
+                "circle-blur": 1.5,
+                "circle-stroke-width": 0,
               },
             });
 
-            // Individual pins — dark bg circle
+            // Cluster circles — clean, no stroke
+            map.addLayer({
+              id: "alert-clusters",
+              type: "circle",
+              source: "alert-pins",
+              filter: ["has", "point_count"],
+              paint: {
+                "circle-color": [
+                  "step", ["get", "point_count"],
+                  "#FF7A00",
+                  5, "#FF3232",
+                  10, "#FF2D78",
+                ],
+                "circle-radius": [
+                  "step", ["get", "point_count"],
+                  16, 5, 22, 10, 28,
+                ],
+                "circle-opacity": 0.8,
+                "circle-stroke-width": 0,
+              },
+            });
+
+            // Cluster count labels
+            map.addLayer({
+              id: "alert-cluster-count",
+              type: "symbol",
+              source: "alert-pins",
+              filter: ["has", "point_count"],
+              layout: {
+                "text-field": ["get", "point_count_abbreviated"],
+                "text-size": 11,
+              },
+              paint: {
+                "text-color": "#ffffff",
+              },
+            });
+
+            // Pin outer glow — occurrence color, soft
+            map.addLayer({
+              id: "alert-unclustered-glow",
+              type: "circle",
+              source: "alert-pins",
+              filter: ["!", ["has", "point_count"]],
+              paint: {
+                "circle-radius": 12,
+                "circle-color": ["get", "color"],
+                "circle-opacity": 0.2,
+                "circle-blur": 0.6,
+                "circle-stroke-width": 0,
+              },
+            });
+
+            // Pin inner circle — occurrence color, solid
             map.addLayer({
               id: "alert-unclustered",
               type: "circle",
               source: "alert-pins",
               filter: ["!", ["has", "point_count"]],
               paint: {
-                "circle-radius": 14,
-                "circle-color": "rgba(6,8,14,0.85)",
-                "circle-stroke-width": 0,
+                "circle-radius": 7,
+                "circle-color": ["get", "color"],
                 "circle-opacity": 0.9,
+                "circle-stroke-width": 0,
               },
             });
 
@@ -318,16 +306,14 @@ const MapCore = memo(
               filter: ["!", ["has", "point_count"]],
               layout: {
                 "text-field": ["get", "icon"],
-                "text-size": 16,
+                "text-size": 14,
                 "text-allow-overlap": true,
+                "text-anchor": "center",
+                "text-offset": [0, -1.4],
               },
             });
 
-            // ── LAYER 5: User location marker ──
-            // Will be updated via userCoords prop changes
-
             // ── Events ──
-            // Click cluster → zoom in
             map.on("click", "alert-clusters", (e) => {
               const features = map.queryRenderedFeatures(e.point, {
                 layers: ["alert-clusters"],
@@ -344,14 +330,12 @@ const MapCore = memo(
               });
             });
 
-            // Click pin → emit
             map.on("click", "alert-unclustered", (e) => {
               if (!e.features?.length) return;
               const props = e.features[0].properties;
               onPinClick?.(props as Record<string, unknown>);
             });
 
-            // Cursor changes
             map.on("mouseenter", "alert-unclustered", () => {
               map.getCanvas().style.cursor = "pointer";
             });
@@ -368,7 +352,6 @@ const MapCore = memo(
             onReady?.();
           });
 
-          // Debounced moveend
           map.on("moveend", () => {
             clearTimeout(moveTimeoutRef.current);
             moveTimeoutRef.current = setTimeout(() => {
@@ -382,7 +365,6 @@ const MapCore = memo(
         initMap();
 
         return () => {
-          // Do NOT remove MapCore — it stays alive for the session
           clearTimeout(moveTimeoutRef.current);
         };
       }, []); // eslint-disable-line react-hooks/exhaustive-deps

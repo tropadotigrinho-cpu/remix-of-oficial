@@ -8,6 +8,7 @@ export default function MapaPage() {
   const [filter, setFilter] = useState("all");
   const [activeOn, setActiveOn] = useState(DEFAULT_ON);
   const [selItem, setSelItem] = useState<Alert | null>(null);
+  const [quickAlert, setQuickAlert] = useState<Record<string, unknown> | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showCfg, setShowCfg] = useState(false);
   const [toast, setToast] = useState(true);
@@ -15,14 +16,31 @@ export default function MapaPage() {
   const toggleOn = (id: string) => setActiveOn((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const visibleFilters = [{ id: "all", lb: "Todos", ic: "◉", c: D.text, desc: "" }, ...ALL_FILTERS.filter((f) => activeOn.includes(f.id))];
 
+  const handlePinClick = (props: Record<string, unknown>) => {
+    // Show compact popup first
+    setQuickAlert(props);
+  };
+
+  const handlePopupTap = () => {
+    if (!quickAlert) return;
+    const alert = ALERTS.find((a) => a.id === Number(quickAlert.id));
+    if (alert) {
+      setSelItem(alert);
+      setQuickAlert(null);
+    }
+  };
+
+  // Find matching filter for color/icon
+  const getAlertMeta = (type: string) => {
+    const f = ALL_FILTERS.find((x) => x.id === type);
+    return f || { ic: "⚠️", c: D.red, lb: type };
+  };
+
   return (
     <div style={{ position: "absolute", inset: 0, bottom: NAV_H }}>
       <MapOrchestrator
         activeFilters={activeOn}
-        onPinClick={(props) => {
-          const alert = ALERTS.find((a) => a.id === Number(props.id));
-          if (alert) setSelItem(alert);
-        }}
+        onPinClick={handlePinClick}
       />
 
       {/* TOP */}
@@ -50,11 +68,48 @@ export default function MapaPage() {
         </div>
       </div>
 
-      {/* Toast */}
-      {toast && !selItem && (
+      {/* Compact alert popup (pin click) */}
+      {quickAlert && !selItem && (
+        <div style={{ position: "absolute", top: 148, left: 16, right: 16, zIndex: 10 }}>
+          <div
+            onClick={handlePopupTap}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 14px",
+              background: `${getAlertMeta(String(quickAlert.type)).c}0A`,
+              border: `1px solid ${getAlertMeta(String(quickAlert.type)).c}1A`,
+              borderRadius: 14,
+              backdropFilter: "blur(12px)",
+              cursor: "pointer",
+              transition: "all .2s",
+            }}
+          >
+            <div style={{ fontSize: 20 }}>{getAlertMeta(String(quickAlert.type)).ic}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: getAlertMeta(String(quickAlert.type)).c, letterSpacing: 0.3 }}>
+                {String(quickAlert.title || getAlertMeta(String(quickAlert.type)).lb).toUpperCase()}
+              </div>
+              <div style={{ fontSize: 11, color: D.sub, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                📍 {String(quickAlert.bairro || "São Paulo")} · {String(quickAlert.votes || 0)} confirmações
+              </div>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setQuickAlert(null); }}
+              style={{ background: "none", border: "none", color: D.muted, cursor: "pointer", padding: 0, display: "flex", flexShrink: 0 }}
+            >
+              <CloseIc />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast (default risk zone) */}
+      {toast && !selItem && !quickAlert && (
         <div style={{ position: "absolute", top: 148, left: 16, right: 16, zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: `${D.red}12`, border: `1px solid ${D.red}20`, borderRadius: 14, backdropFilter: "blur(12px)" }}>
-            <div style={{ width: 8, height: 8, borderRadius: 4, background: D.red, boxShadow: `0 0 8px ${D.red}` }} />
+            <div style={{ width: 8, height: 8, borderRadius: 4, background: D.red, boxShadow: `0 0 8px ${D.red}`, animation: "pulse 2s infinite" }} />
             <span style={{ flex: 1, fontSize: 11, color: D.sub }}>Consolação · alta incidência <span style={{ color: D.red }}>20h–23h</span></span>
             <button onClick={() => setToast(false)} style={{ background: "none", border: "none", color: D.muted, cursor: "pointer", padding: 0, display: "flex" }}>
               <CloseIc />
@@ -62,9 +117,6 @@ export default function MapaPage() {
           </div>
         </div>
       )}
-
-      {/* Controls are now in MapOrchestrator → MapControls */}
-
 
       {/* Criar alerta btn */}
       <div style={{ position: "absolute", bottom: 14, left: 20, right: 20, zIndex: 10 }}>
@@ -79,7 +131,6 @@ export default function MapaPage() {
           <div style={{ position: "absolute", inset: 0 }} onClick={() => setShowCfg(false)} />
           <div className="ig-sheet" style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: D.s1, borderRadius: "24px 24px 0 0", border: `1px solid ${D.border}`, borderBottom: "none", padding: "20px", maxHeight: "75%", overflowY: "auto" }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: D.border2, margin: "0 auto 16px" }} />
-
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: D.text }}>Filtros da barra</div>
@@ -89,8 +140,6 @@ export default function MapaPage() {
                 <CloseIc />
               </button>
             </div>
-
-            {/* PRÉVIA */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: D.sub, letterSpacing: 1.5, marginBottom: 8 }}>PRÉVIA DA BARRA</div>
               <div style={{ background: D.s2, borderRadius: 14, padding: 12, border: `1px solid ${D.border}` }}>
@@ -111,8 +160,6 @@ export default function MapaPage() {
                 </div>
               </div>
             </div>
-
-            {/* LISTA DE TIPOS */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 10, fontWeight: 600, color: D.sub, letterSpacing: 1.5, marginBottom: 8 }}>TIPOS DISPONÍVEIS</div>
               <div style={{ borderRadius: 16, overflow: "hidden", border: `1px solid ${D.border}` }}>
@@ -134,7 +181,6 @@ export default function MapaPage() {
                 })}
               </div>
             </div>
-
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setActiveOn(DEFAULT_ON)} style={{ flex: 1, padding: "12px", background: "transparent", border: `1px solid ${D.border}`, borderRadius: 14, color: D.sub, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Restaurar</button>
               <button onClick={() => setShowCfg(false)} style={{ flex: 1, padding: "12px", background: D.s2, border: `1px solid ${D.border2}`, borderRadius: 14, color: D.text, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Confirmar</button>
