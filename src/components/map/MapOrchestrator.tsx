@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, lazy, Suspense } from "react";
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import MapCore, { type MapCoreHandle } from "./MapCore";
 import MapControls from "./MapControls";
 import MapChatModal from "./MapChatModal";
@@ -27,7 +27,12 @@ export default function MapOrchestrator({
 
   const userPlan = useUserPlan();
   const isPro = userPlan === "pro";
-  const { location, startTracking } = useUserLocation();
+  const { location, tracking, startTracking } = useUserLocation();
+
+  // Auto-start GPS tracking on mount
+  useEffect(() => {
+    startTracking();
+  }, [startTracking]);
 
   const userCoords: [number, number] | null = location
     ? [location.longitude, location.latitude]
@@ -36,13 +41,13 @@ export default function MapOrchestrator({
   const { geojson } = useMapAlerts(userPlan, userCoords, activeFilters);
 
   const handleCentralizar = useCallback(() => {
-    startTracking();
+    if (!tracking) startTracking();
     if (userCoords) {
-      mapCoreRef.current?.flyTo(userCoords);
+      mapCoreRef.current?.flyTo(userCoords, 15);
     } else {
       mapCoreRef.current?.flyTo(SP_CENTER);
     }
-  }, [userCoords, startTracking]);
+  }, [userCoords, tracking, startTracking]);
 
   const handleToggleHeatmap = useCallback(() => {
     setHeatmapActive((prev) => {
@@ -99,6 +104,7 @@ export default function MapOrchestrator({
         compassBearing={compassBearing}
         onResetNorth={handleResetNorth}
         onOpenChat={() => setChatOpen(true)}
+        gpsActive={tracking && !!userCoords}
       />
 
       <MapChatModal open={chatOpen} onClose={() => setChatOpen(false)} />
