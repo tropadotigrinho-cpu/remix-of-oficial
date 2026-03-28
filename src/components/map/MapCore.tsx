@@ -256,8 +256,7 @@ const MapCore = memo(
                   10, 30,
                 ],
                 "circle-opacity": 0.85,
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "rgba(255,255,255,0.15)",
+                "circle-stroke-width": 0,
               },
             });
 
