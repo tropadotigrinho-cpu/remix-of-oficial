@@ -288,11 +288,11 @@ const MapCore = memo(
               paint: {
                 "circle-radius": [
                   "interpolate", ["linear"], ["zoom"],
-                  11, 30, 14, 60, 17, 90,
+                  11, 35, 14, 70, 17, 100,
                 ],
                 "circle-color": ["get", "color"],
-                "circle-opacity": 0.18,
-                "circle-blur": 1,
+                "circle-opacity": 0.15,
+                "circle-blur": 1.2,
               },
             });
 
