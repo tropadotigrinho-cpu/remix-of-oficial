@@ -256,8 +256,7 @@ const MapCore = memo(
                   10, 30,
                 ],
                 "circle-opacity": 0.85,
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "rgba(255,255,255,0.15)",
+                "circle-stroke-width": 0,
               },
             });
 
@@ -289,11 +288,11 @@ const MapCore = memo(
               paint: {
                 "circle-radius": [
                   "interpolate", ["linear"], ["zoom"],
-                  11, 30, 14, 60, 17, 90,
+                  11, 35, 14, 70, 17, 100,
                 ],
                 "circle-color": ["get", "color"],
-                "circle-opacity": 0.18,
-                "circle-blur": 1,
+                "circle-opacity": 0.15,
+                "circle-blur": 1.2,
               },
             });
 
@@ -304,7 +303,7 @@ const MapCore = memo(
               source: "alert-pins",
               filter: ["!", ["has", "point_count"]],
               paint: {
-                "circle-radius": 12,
+                "circle-radius": 14,
                 "circle-color": "rgba(6,8,14,0.85)",
                 "circle-stroke-width": 0,
                 "circle-opacity": 0.9,
@@ -319,7 +318,7 @@ const MapCore = memo(
               filter: ["!", ["has", "point_count"]],
               layout: {
                 "text-field": ["get", "icon"],
-                "text-size": 14,
+                "text-size": 16,
                 "text-allow-overlap": true,
               },
             });
