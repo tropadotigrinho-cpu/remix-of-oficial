@@ -1,108 +1,57 @@
 
 
-# Iron Guard — 3D Immersive Map + Chat de Bordo Overhaul
+# Chat Modal Redesign + Pin Icons Refinement
 
-## Overview
-Comprehensive rework of the 3D immersive mode, alert pin visuals, risk zone rendering, map controls sidebar, and a new in-map chat modal with voice orb overlay.
+## What Changes
 
----
+### 1. MapChatModal.tsx — Full redesign matching reference HTML
 
-## 1. Fix 3D Immersive Mode (MapImersivo3D.tsx)
+**Voice mode (major overhaul):**
+- Solid `#020407` background (not semi-transparent), 40vh height
+- Gradient fade `-top-32` into the map above (transparent → `#020407`)
+- AI orb: 112px, positioned at `-top-10` overlapping the modal edge, using `radial-gradient(circle, #00D1FF, #007AFF)` with cyan/blue glow + `orb-float` animation (scale 1→1.1 over 4s)
+- Close button: top-right inside the modal, `rounded-full bg-white/5`
+- Waveform: 7 bars, 4px wide, alternating `#00D1FF` / `#007AFF` colors, staggered `animation-delay`
+- Live caption: 16px italic white text centered below waveform
+- Input bar: unified pill container `bg-white/5 rounded-full border border-white/10` with mic button (cyan icon, no bg) + send button (cyan bg `#00D1FF`, dark icon) inside the pill — NOT separate circles outside
+- 3px gap between orb, waveform, and caption (matching reference spec)
 
-**Problems:** Buildings have opacity, roads show through, speed/compass HUD duplicates sidebar controls, GPS not working properly.
+**Text mode:**
+- Keep current structure (messages, chips, input) but update input bar to match the same pill style as voice mode
+- Keep `🤖` avatar, message bubbles, quick chips
+
+**Key differences from current:**
+- Voice mode background is solid dark, not semi-transparent blur
+- Orb uses cyan/blue gradient instead of teal
+- Orb overlaps modal top edge (positioned `-top-10`)
+- Input is a unified pill with buttons inside, not separate elements
+- Waveform bars use alternating colors with staggered delays
+- No separate header in voice mode — just close button
+
+### 2. MapCore.tsx — Pin icons as occurrence type emojis
+
+**Current issue:** Pins show emoji icons from `["get", "icon"]` property — this already works but need to verify the data flow and ensure the dark circle bg + emoji are properly sized.
 
 **Changes:**
-- Set `fill-extrusion-opacity` to `1.0` (currently `0.9`) so buildings are fully opaque
-- Remove the bottom speed (km/h) and compass HUD blocks entirely — these already exist in MapControls sidebar
-- Keep only the top-left "MODO 3D" badge and top-right "Voltar 2D" button
-- Ensure `maxBounds` covers only São Paulo state (current SP_BOUNDS already does this: `[-53.1, -25.3]` to `[-44.1, -19.7]`)
-- GPS: start tracking automatically on mount via `navigator.geolocation.watchPosition` (already implemented, should work if user grants permission)
-- Dark style is already `mapbox://styles/mapbox/dark-v11` — confirmed correct
+- Increase pin background circle to `14px` radius for better icon visibility
+- Ensure `text-size` for emoji icons is `16` for clarity
+- Remove `circle-stroke-width` from cluster circles (no borders)
+- Gradient halos for roubo/assalto: increase `circle-blur` to `1.2` and adjust opacity to `0.15` for smoother gradient falloff — no arc borders, pure degrade
+- Risk zones: already have no stroke (removed previously) — confirm fill-opacity blending for concentric overlap
 
-## 2. Fix MapTiler 3D Fallback (MapTiler3DFallback.tsx)
+### 3. Backdrop changes
+- Voice mode: gradient from transparent to `#020407` (not `rgba(6,8,14,0.5)`)
+- Text mode: keep dark overlay `rgba(0,0,0,0.35)`
 
-- Same changes: remove speed/compass HUD blocks
-- Keep only mode badge + exit button
-- Already uses dark style (`streets-v2-dark`)
+## Files Modified
 
-## 3. Alert Pins — Minimalist Icons + Gradient Radius
+| File | Changes |
+|------|---------|
+| `MapChatModal.tsx` | Complete voice mode redesign, unified pill input, orb repositioned, new animations |
+| `MapCore.tsx` | Pin size adjustments, remove cluster stroke borders, refine halo blur |
 
-**In MapCore.tsx:**
-- Change pin rendering: use `symbol` layer with minimalist text icons instead of plain circles
-- Add gradient radius halos ONLY for `roubo` and `assalto` types using a heatmap-like circle layer with gradient fill (no hard arc borders)
-- For overlapping serious alerts: the gradient circles naturally create concentric/blended effects
-- Remove `circle-stroke-width` / `circle-stroke-color` from unclustered pins to avoid arc borders
-
-**Implementation approach:**
-- Split alert pins into two sources: `alert-pins-serious` (roubo/assalto with gradient halos) and `alert-pins-normal` (other types, no halos)
-- Serious pins get an additional `circle` layer with large radius, low opacity, and smooth gradient via `circle-blur`
-- All pins get a `symbol` layer on top with the emoji icon at small size
-
-## 4. Risk Zones — Gradient Without Arc Borders
-
-**In MapCore.tsx:**
-- Remove `zonas-risco-stroke` layer (the line border creating arc effect)
-- Increase `fill-opacity` slightly and use `circle-blur` or keep as fill but ensure smooth gradient appearance
-- For concentric overlapping zones: they already overlap naturally with fill layers — just ensure opacity blending looks smooth
-
-## 5. MapControls Sidebar Improvements
-
-**Add to MapControls.tsx:**
-- Better heatmap toggle icon with visual on/off state (already partially done)
-- Add a new "Chat de Bordo" button below the existing controls with a chat/message icon
-- Wire `onOpenChat` callback prop
-
-**Remove:** The duplicate layers button (currently there are compass, layers, 3D, heatmap, GPS — the layers button is redundant with the config panel)
-
-## 6. In-Map Chat Modal (New Component)
-
-**New file: `src/components/map/MapChatModal.tsx`**
-
-Based on the reference image, this is a modal that appears over the map (not full-page):
-
-**Text mode (default):**
-- Dark card with "IA OPERACIONAL ATIVA" header + green dot + close button
-- AI message bubble with bot avatar icon
-- Quick-action chips ("Como tá aqui?", "Tem roubo perto?", "Analisar rota")
-- Input bar with text field + mic icon + send button
-- Placeholder: "Talk to Iron Guard AI..."
-
-**Voice mode (when mic icon tapped):**
-- Overlay with gradient background covers 40% bottom of screen
-- Large glowing orb (green/teal, animated) — the AI presence indicator
-- Audio waveform bars below orb
-- Transcription text in italics
-- The gradient overlay blends into the map above
-
-**Integration:**
-- Triggered from new chat button in MapControls
-- State managed in MapOrchestrator
-- Uses mock responses initially (same pattern as ChatPage.tsx)
-- Later can be connected to Lovable AI edge function
-
-## 7. Request Economy
-
-- MapTiler: already used as fallback only; no changes needed
-- Mapbox: budget system already in place via `mapboxBudget.ts`
-- No additional API calls introduced
-
----
-
-## Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `src/components/map/MapImersivo3D.tsx` | Remove speed/compass HUD, fix opacity to 1.0 |
-| `src/components/map/MapTiler3DFallback.tsx` | Remove speed/compass HUD |
-| `src/components/map/MapCore.tsx` | Rework pin layers (minimalist icons, gradient halos for serious only), remove zone stroke borders |
-| `src/components/map/MapControls.tsx` | Add chat button, remove layers duplicate, improve heatmap icon |
-| `src/components/map/MapChatModal.tsx` | **New** — in-map chat modal with text + voice orb overlay |
-| `src/components/map/MapOrchestrator.tsx` | Add chat modal state, pass props |
-
-## Technical Notes
-
-- Gradient halos use MapLibre's `circle-blur` property to create smooth falloff without hard edges
-- Voice orb reuses animation patterns from existing `ChatPage.tsx` VoiceScreen but in a compact 40% height overlay
-- No database changes needed — this is all frontend UI
-- No new API keys required
+## Technical Details
+- New CSS keyframes: `orb-float` (4s scale animation), `waveform` (1.2s height animation with staggered delays)
+- Orb uses `position: absolute, top: -40px, left: 50%, transform: translateX(-50%)` to overlap modal edge
+- Colors: primary `#00D1FF`, accent-blue `#007AFF` (from reference), mapped to existing `D.teal` usage replaced with these specific values
 
