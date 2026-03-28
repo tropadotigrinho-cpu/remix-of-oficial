@@ -303,7 +303,7 @@ const MapCore = memo(
               source: "alert-pins",
               filter: ["!", ["has", "point_count"]],
               paint: {
-                "circle-radius": 12,
+                "circle-radius": 14,
                 "circle-color": "rgba(6,8,14,0.85)",
                 "circle-stroke-width": 0,
                 "circle-opacity": 0.9,
@@ -318,7 +318,7 @@ const MapCore = memo(
               filter: ["!", ["has", "point_count"]],
               layout: {
                 "text-field": ["get", "icon"],
-                "text-size": 14,
+                "text-size": 16,
                 "text-allow-overlap": true,
               },
             });
