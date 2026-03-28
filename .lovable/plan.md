@@ -1,57 +1,81 @@
 
 
-# Chat Modal Redesign + Pin Icons Refinement
+# Redesign de Pins, Raios, GPS Real-time, Popup de Alerta e Tabs Laterais
 
-## What Changes
+## Resumo
+Redesign premium e minimalista dos pins de ocorrência, zonas de risco com gradiente concêntrico, GPS funcional em tempo real, popup de alerta compacto no estilo da HomePage, e tabs laterais mais clean.
 
-### 1. MapChatModal.tsx — Full redesign matching reference HTML
+---
 
-**Voice mode (major overhaul):**
-- Solid `#020407` background (not semi-transparent), 40vh height
-- Gradient fade `-top-32` into the map above (transparent → `#020407`)
-- AI orb: 112px, positioned at `-top-10` overlapping the modal edge, using `radial-gradient(circle, #00D1FF, #007AFF)` with cyan/blue glow + `orb-float` animation (scale 1→1.1 over 4s)
-- Close button: top-right inside the modal, `rounded-full bg-white/5`
-- Waveform: 7 bars, 4px wide, alternating `#00D1FF` / `#007AFF` colors, staggered `animation-delay`
-- Live caption: 16px italic white text centered below waveform
-- Input bar: unified pill container `bg-white/5 rounded-full border border-white/10` with mic button (cyan icon, no bg) + send button (cyan bg `#00D1FF`, dark icon) inside the pill — NOT separate circles outside
-- 3px gap between orb, waveform, and caption (matching reference spec)
+## 1. Pins de Ocorrência — Design Premium (`MapCore.tsx`)
 
-**Text mode:**
-- Keep current structure (messages, chips, input) but update input bar to match the same pill style as voice mode
-- Keep `🤖` avatar, message bubbles, quick chips
+**Atual:** Círculo escuro 14px + emoji 16px por cima. Sem refinamento visual.
 
-**Key differences from current:**
-- Voice mode background is solid dark, not semi-transparent blur
-- Orb uses cyan/blue gradient instead of teal
-- Orb overlaps modal top edge (positioned `-top-10`)
-- Input is a unified pill with buttons inside, not separate elements
-- Waveform bars use alternating colors with staggered delays
-- No separate header in voice mode — just close button
+**Novo design:**
+- Background circle: `12px` radius, cor da ocorrência com `opacity: 0.2` (não mais preto)
+- Inner circle: `7px` radius, cor sólida da ocorrência com `opacity: 0.9`
+- Emoji icon: `text-size: 14`, centrado, `text-allow-overlap: true`
+- Sem stroke/border em nenhum nível — clean
 
-### 2. MapCore.tsx — Pin icons as occurrence type emojis
+**Clusters:** Mesma paleta, sem stroke, `circle-opacity: 0.8`
 
-**Current issue:** Pins show emoji icons from `["get", "icon"]` property — this already works but need to verify the data flow and ensure the dark circle bg + emoji are properly sized.
+## 2. Raios/Halos Gradiente Concêntricos (`MapCore.tsx`)
 
-**Changes:**
-- Increase pin background circle to `14px` radius for better icon visibility
-- Ensure `text-size` for emoji icons is `16` for clarity
-- Remove `circle-stroke-width` from cluster circles (no borders)
-- Gradient halos for roubo/assalto: increase `circle-blur` to `1.2` and adjust opacity to `0.15` for smoother gradient falloff — no arc borders, pure degrade
-- Risk zones: already have no stroke (removed previously) — confirm fill-opacity blending for concentric overlap
+**Somente para roubo/assalto (alertas graves):**
+- Camada `alert-serious-halo`: `circle-blur: 1.5`, `circle-opacity: 0.12`, radius interpolado por zoom (40→90→130px)
+- Cor extraída da propriedade `color` do feature
+- Sem stroke, sem arco — puro degradê radial
+- Sobreposição de dois alertas graves próximos cria efeito concêntrico natural
 
-### 3. Backdrop changes
-- Voice mode: gradient from transparent to `#020407` (not `rgba(6,8,14,0.5)`)
-- Text mode: keep dark overlay `rgba(0,0,0,0.35)`
+**Zonas de risco:**
+- Remover `user-radius-stroke` (borda tracejada do raio do usuário)
+- `user-radius-fill`: `fill-opacity: 0.04` — quase invisível, apenas indicativo
+- `zonas-risco-fill`: manter, `fill-opacity: 0.1` — mais sutil
 
-## Files Modified
+## 3. GPS Real-time Funcional (`MapOrchestrator.tsx` + `useUserLocation.ts`)
 
-| File | Changes |
-|------|---------|
-| `MapChatModal.tsx` | Complete voice mode redesign, unified pill input, orb repositioned, new animations |
-| `MapCore.tsx` | Pin size adjustments, remove cluster stroke borders, refine halo blur |
+**Problema:** GPS só inicia tracking ao clicar no botão. Precisa funcionar automaticamente.
 
-## Technical Details
-- New CSS keyframes: `orb-float` (4s scale animation), `waveform` (1.2s height animation with staggered delays)
-- Orb uses `position: absolute, top: -40px, left: 50%, transform: translateX(-50%)` to overlap modal edge
-- Colors: primary `#00D1FF`, accent-blue `#007AFF` (from reference), mapped to existing `D.teal` usage replaced with these specific values
+**Mudanças:**
+- `MapOrchestrator`: chamar `startTracking()` automaticamente no mount via `useEffect`
+- Quando `userCoords` muda, `MapCore` já atualiza o marker e o raio — isso já funciona
+- Ao clicar GPS, fazer `flyTo(userCoords)` com zoom 15 para centralizar
+- Atualizar estilo do botão GPS para indicar estado ativo (tracking vs idle)
+
+## 4. Popup de Alerta Compacto (`MapaPage.tsx`)
+
+**Atual:** O toast no topo é simples. O `OccurrenceModal` é um sheet grande com cards scrolláveis.
+
+**Novo:** Quando um pin é clicado, mostrar um popup compacto (não o modal gigante) no estilo do banner de "ZONA DE RISCO" da HomePage:
+- Altura: ~70px, posicionado abaixo das tabs de filtro (top: ~148px)
+- Layout: ícone da ocorrência | título + bairro + tempo | distância + confirmações
+- Dot pulsante com cor da ocorrência
+- Botão X para fechar
+- Background: `${color}0A`, border: `${color}1A`, borderRadius: 14
+- Tap no popup abre o `OccurrenceModal` completo
+
+**Isso substitui** a abertura direta do OccurrenceModal ao clicar no pin — agora é: pin → popup compacto → tap popup → modal completo.
+
+## 5. Tabs Laterais Minimalistas (`MapControls.tsx`)
+
+**Atual:** 40px botões com `borderRadius: 12`, background escuro com border.
+
+**Novo design premium:**
+- Tamanho: `36px × 36px`
+- `borderRadius: 50%` (totalmente circular)
+- Background: `rgba(11,16,24,0.7)` sem border visível (`border: 1px solid transparent`)
+- Backdrop blur mais forte: `blur(20px)`
+- Ícones: `14px`, stroke-width `1.5` (mais fino)
+- Estado ativo: glow sutil `box-shadow: 0 0 10px ${color}30`
+- Gap entre botões: `8px`
+- Sem shadow pesado — apenas blur
+
+## Arquivos Modificados
+
+| Arquivo | Mudanças |
+|---------|----------|
+| `MapCore.tsx` | Redesign pin layers, ajustar halos, remover user-radius-stroke, suavizar opacidades |
+| `MapControls.tsx` | Botões circulares 36px, ícones 14px, sem borders visíveis, glow ativo |
+| `MapOrchestrator.tsx` | Auto-start GPS tracking no mount, flyTo com zoom ao clicar GPS |
+| `MapaPage.tsx` | Popup compacto ao clicar pin (estilo zona de risco), tap abre modal completo |
 
