@@ -4,6 +4,7 @@ import NavBar from "./NavBar";
 import HomePage from "./HomePage";
 import MapaPage from "./MapaPage";
 import ChatPage from "./ChatPage";
+import FeedPage from "./FeedPage";
 import SOSModal from "./SOSModal";
 
 export default function IronGuardApp() {
@@ -36,9 +37,14 @@ export default function IronGuardApp() {
             <ChatPage />
           </div>
         )}
-        {nav !== "home" && nav !== "mapa" && nav !== "chat" && (
+        {nav === "feed" && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+            <FeedPage />
+          </div>
+        )}
+        {nav !== "home" && nav !== "mapa" && nav !== "chat" && nav !== "feed" && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10 }}>
-            <span style={{ fontSize: 42, opacity: 0.2 }}>{nav === "feed" ? "📡" : "👤"}</span>
+            <span style={{ fontSize: 42, opacity: 0.2 }}>👤</span>
             <span style={{ color: D.muted, fontSize: 13 }}>Página em construção</span>
           </div>
         )}
