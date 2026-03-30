@@ -4,6 +4,7 @@ import NavBar from "./NavBar";
 import HomePage from "./HomePage";
 import MapaPage from "./MapaPage";
 import ChatPage from "./ChatPage";
+import FeedPage from "./FeedPage";
 import SOSModal from "./SOSModal";
 
 export default function IronGuardApp() {
