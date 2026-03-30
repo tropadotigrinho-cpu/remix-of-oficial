@@ -2,7 +2,7 @@
    IRON GUARD — Map Constants
 ═══════════════════════════════════════════════════════════ */
 
-export const SP_CENTER: [number, number] = [-46.6333, -23.5505];
+export const SP_CENTER: [number, number] = [-47.0626, -22.9064]; // Campinas-SP
 export const SP_BOUNDS: [[number, number], [number, number]] = [
   [-53.1, -25.3],
   [-44.1, -19.7],

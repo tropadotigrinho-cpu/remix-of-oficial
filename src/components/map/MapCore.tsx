@@ -38,6 +38,24 @@ interface MapCoreProps {
   userCoords?: [number, number] | null;
 }
 
+// Heatmap color ramps per occurrence type
+const HEATMAP_COLORS: Record<string, string> = {
+  roubo: "#FF3232",
+  assalto: "#FF2D78",
+  acidente: "#FF7A00",
+  alagamento: "#3D8EFF",
+  perigo: "#FFD000",
+  furto: "#9D6FFF",
+  blitz: "#3D8EFF",
+  transito: "#FF7A00",
+  obra: "#FFD000",
+  incendio: "#FF3232",
+  veiculo_suspeito: "#FF2D78",
+  ajuda: "#00D4C8",
+  caça: "#22D46A",
+  zona: "#9D6FFF",
+};
+
 const MapCore = memo(
   forwardRef<MapCoreHandle, MapCoreProps>(
     ({ visible, onReady, onPinClick, onMapMove, userPlan, alertsGeoJSON, userCoords }, ref) => {
@@ -46,6 +64,7 @@ const MapCore = memo(
       const readyRef = useRef(false);
       const moveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
       const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+      const heatLayersRef = useRef<string[]>([]);
 
       useImperativeHandle(ref, () => ({
         getMap: () => mapRef.current,
@@ -54,19 +73,15 @@ const MapCore = memo(
         },
         setHeatmapVisible: (vis) => {
           if (!mapRef.current) return;
-          try {
-            mapRef.current.setLayoutProperty(
-              "alerts-heatmap",
-              "visibility",
-              vis ? "visible" : "none"
-            );
-          } catch {
-            // layer may not exist yet
-          }
+          // Toggle all heatmap layers
+          heatLayersRef.current.forEach((id) => {
+            try {
+              mapRef.current!.setLayoutProperty(id, "visibility", vis ? "visible" : "none");
+            } catch { /* ignore */ }
+          });
         },
       }));
 
-      // Initialize map ONCE
       useEffect(() => {
         if (!divRef.current || mapRef.current) return;
 
@@ -104,85 +119,32 @@ const MapCore = memo(
           map.on("load", () => {
             readyRef.current = true;
 
-            // ── LAYER 1: Heatmap ──
-            map.addSource("alerts-heat", {
-              type: "geojson",
-              data: alertsGeoJSON || { type: "FeatureCollection", features: [] },
-            });
-
-            map.addLayer({
-              id: "alerts-heatmap",
-              type: "heatmap",
-              source: "alerts-heat",
-              maxzoom: 14,
-              paint: {
-                "heatmap-weight": [
-                  "interpolate", ["linear"], ["get", "votes"],
-                  0, 0, 12, 1,
-                ],
-                "heatmap-intensity": [
-                  "interpolate", ["linear"], ["zoom"],
-                  11, 0.6, 14, 1.2,
-                ],
-                "heatmap-color": [
-                  "interpolate", ["linear"], ["heatmap-density"],
-                  0, "rgba(0,0,0,0)",
-                  0.2, "rgba(255,100,0,0.3)",
-                  0.4, "rgba(255,80,0,0.5)",
-                  0.6, "rgba(255,50,0,0.65)",
-                  0.8, "rgba(255,30,0,0.8)",
-                  1, "rgba(255,0,0,0.9)",
-                ],
-                "heatmap-radius": [
-                  "interpolate", ["linear"], ["zoom"],
-                  11, 20, 14, 40,
-                ],
-                "heatmap-opacity": 0.7,
-              },
-            });
-
-            // ── LAYER 2: User radius circle ──
+            // ── User radius circle ──
             const radiusM = userPlan === "pro" ? RAIO_PRO_M : RAIO_FREE_M;
             const center = userCoords || SP_CENTER;
-            const circle = turf.circle(center, radiusM / 1000, {
-              steps: 64,
-              units: "kilometers",
-            });
+            const circle = turf.circle(center, radiusM / 1000, { steps: 64, units: "kilometers" });
 
-            map.addSource("user-radius", {
-              type: "geojson",
-              data: circle,
-            });
-
+            map.addSource("user-radius", { type: "geojson", data: circle });
             map.addLayer({
               id: "user-radius-fill",
               type: "fill",
               source: "user-radius",
-              paint: {
-                "fill-color": "#3D8EFF",
-                "fill-opacity": 0.04,
-              },
+              paint: { "fill-color": "#3D8EFF", "fill-opacity": 0.04 },
             });
 
-            // No stroke — clean radius
-
-            // ── LAYER 3: Zonas de risco (gradient fill, no stroke) ──
+            // ── Zonas de risco (Campinas bairros) ──
             const zonasRisco: GeoJSON.FeatureCollection = {
               type: "FeatureCollection",
               features: [
-                turf.circle([-46.655, -23.550], 0.6, { steps: 48, units: "kilometers", properties: { nivel: 4, nome: "Consolação" } }),
-                turf.circle([-46.640, -23.555], 0.5, { steps: 48, units: "kilometers", properties: { nivel: 3, nome: "Bela Vista" } }),
-                turf.circle([-46.635, -23.525], 0.7, { steps: 48, units: "kilometers", properties: { nivel: 2, nome: "Bom Retiro" } }),
-                turf.circle([-46.620, -23.545], 0.4, { steps: 48, units: "kilometers", properties: { nivel: 5, nome: "Liberdade" } }),
-                turf.circle([-46.665, -23.535], 0.55, { steps: 48, units: "kilometers", properties: { nivel: 1, nome: "Higienópolis" } }),
+                turf.circle([-47.060, -22.900], 0.6, { steps: 48, units: "kilometers", properties: { nivel: 4, nome: "Centro" } }),
+                turf.circle([-47.045, -22.895], 0.5, { steps: 48, units: "kilometers", properties: { nivel: 3, nome: "Cambuí" } }),
+                turf.circle([-47.040, -22.875], 0.7, { steps: 48, units: "kilometers", properties: { nivel: 2, nome: "Taquaral" } }),
+                turf.circle([-47.085, -22.860], 0.4, { steps: 48, units: "kilometers", properties: { nivel: 5, nome: "Barão Geraldo" } }),
+                turf.circle([-47.070, -22.910], 0.55, { steps: 48, units: "kilometers", properties: { nivel: 1, nome: "Bosque" } }),
               ],
             };
 
-            map.addSource("zonas-risco", {
-              type: "geojson",
-              data: zonasRisco,
-            });
-
+            map.addSource("zonas-risco", { type: "geojson", data: zonasRisco });
             map.addLayer({
               id: "zonas-risco-fill",
               type: "fill",
@@ -190,18 +152,17 @@ const MapCore = memo(
               paint: {
                 "fill-color": [
                   "match", ["get", "nivel"],
-                  1, "#FFD000",
-                  2, "#FF7A00",
-                  3, "#FF3232",
-                  4, "#9D6FFF",
-                  5, "#8B0000",
+                  1, "#FFD000", 2, "#FF7A00", 3, "#FF3232", 4, "#9D6FFF", 5, "#8B0000",
                   "#FF3232",
                 ],
                 "fill-opacity": 0.1,
               },
             });
 
-            // ── LAYER 4: Alert pins (clustered) ──
+            // ── Build heatmap layers per type ──
+            buildHeatmapLayers(map, alertsGeoJSON);
+
+            // ── Alert pins (clustered) ──
             map.addSource("alert-pins", {
               type: "geojson",
               data: alertsGeoJSON || { type: "FeatureCollection", features: [] },
@@ -210,7 +171,7 @@ const MapCore = memo(
               clusterRadius: 50,
             });
 
-            // Gradient halos for serious alerts (roubo/assalto)
+            // Serious alert halos
             map.addSource("alert-pins-serious", {
               type: "geojson",
               data: { type: "FeatureCollection", features: [] },
@@ -221,10 +182,7 @@ const MapCore = memo(
               type: "circle",
               source: "alert-pins-serious",
               paint: {
-                "circle-radius": [
-                  "interpolate", ["linear"], ["zoom"],
-                  11, 40, 14, 90, 17, 130,
-                ],
+                "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 40, 14, 90, 17, 130],
                 "circle-color": ["get", "color"],
                 "circle-opacity": 0.12,
                 "circle-blur": 1.5,
@@ -232,73 +190,59 @@ const MapCore = memo(
               },
             });
 
-            // Cluster circles — clean, no stroke
+            // Clusters
             map.addLayer({
               id: "alert-clusters",
               type: "circle",
               source: "alert-pins",
               filter: ["has", "point_count"],
               paint: {
-                "circle-color": [
-                  "step", ["get", "point_count"],
-                  "#FF7A00",
-                  5, "#FF3232",
-                  10, "#FF2D78",
-                ],
-                "circle-radius": [
-                  "step", ["get", "point_count"],
-                  16, 5, 22, 10, 28,
-                ],
+                "circle-color": ["step", ["get", "point_count"], "#FF7A00", 5, "#FF3232", 10, "#FF2D78"],
+                "circle-radius": ["step", ["get", "point_count"], 16, 5, 22, 10, 28],
                 "circle-opacity": 0.8,
                 "circle-stroke-width": 0,
               },
             });
 
-            // Cluster count labels
             map.addLayer({
               id: "alert-cluster-count",
               type: "symbol",
               source: "alert-pins",
               filter: ["has", "point_count"],
-              layout: {
-                "text-field": ["get", "point_count_abbreviated"],
-                "text-size": 11,
-              },
-              paint: {
-                "text-color": "#ffffff",
-              },
+              layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11 },
+              paint: { "text-color": "#ffffff" },
             });
 
-            // Pin outer glow — occurrence color, soft
+            // Pin outer glow
             map.addLayer({
               id: "alert-unclustered-glow",
               type: "circle",
               source: "alert-pins",
               filter: ["!", ["has", "point_count"]],
               paint: {
-                "circle-radius": 12,
+                "circle-radius": 14,
                 "circle-color": ["get", "color"],
-                "circle-opacity": 0.2,
-                "circle-blur": 0.6,
+                "circle-opacity": 0.25,
+                "circle-blur": 0.8,
                 "circle-stroke-width": 0,
               },
             });
 
-            // Pin inner circle — occurrence color, solid
+            // Pin inner
             map.addLayer({
               id: "alert-unclustered",
               type: "circle",
               source: "alert-pins",
               filter: ["!", ["has", "point_count"]],
               paint: {
-                "circle-radius": 7,
+                "circle-radius": 8,
                 "circle-color": ["get", "color"],
-                "circle-opacity": 0.9,
+                "circle-opacity": 1.0,
                 "circle-stroke-width": 0,
               },
             });
 
-            // Pin emoji icons
+            // Pin emoji
             map.addLayer({
               id: "alert-unclustered-icon",
               type: "symbol",
@@ -306,18 +250,16 @@ const MapCore = memo(
               filter: ["!", ["has", "point_count"]],
               layout: {
                 "text-field": ["get", "icon"],
-                "text-size": 14,
+                "text-size": 16,
                 "text-allow-overlap": true,
                 "text-anchor": "center",
-                "text-offset": [0, -1.4],
+                "text-offset": [0, -0.1],
               },
             });
 
             // ── Events ──
             map.on("click", "alert-clusters", (e) => {
-              const features = map.queryRenderedFeatures(e.point, {
-                layers: ["alert-clusters"],
-              });
+              const features = map.queryRenderedFeatures(e.point, { layers: ["alert-clusters"] });
               if (!features.length) return;
               const clusterId = features[0].properties?.cluster_id;
               const source = map.getSource("alert-pins") as maplibregl.GeoJSONSource;
@@ -332,22 +274,13 @@ const MapCore = memo(
 
             map.on("click", "alert-unclustered", (e) => {
               if (!e.features?.length) return;
-              const props = e.features[0].properties;
-              onPinClick?.(props as Record<string, unknown>);
+              onPinClick?.(e.features[0].properties as Record<string, unknown>);
             });
 
-            map.on("mouseenter", "alert-unclustered", () => {
-              map.getCanvas().style.cursor = "pointer";
-            });
-            map.on("mouseleave", "alert-unclustered", () => {
-              map.getCanvas().style.cursor = "";
-            });
-            map.on("mouseenter", "alert-clusters", () => {
-              map.getCanvas().style.cursor = "pointer";
-            });
-            map.on("mouseleave", "alert-clusters", () => {
-              map.getCanvas().style.cursor = "";
-            });
+            map.on("mouseenter", "alert-unclustered", () => { map.getCanvas().style.cursor = "pointer"; });
+            map.on("mouseleave", "alert-unclustered", () => { map.getCanvas().style.cursor = ""; });
+            map.on("mouseenter", "alert-clusters", () => { map.getCanvas().style.cursor = "pointer"; });
+            map.on("mouseleave", "alert-clusters", () => { map.getCanvas().style.cursor = ""; });
 
             onReady?.();
           });
@@ -355,42 +288,90 @@ const MapCore = memo(
           map.on("moveend", () => {
             clearTimeout(moveTimeoutRef.current);
             moveTimeoutRef.current = setTimeout(() => {
-              if (mapRef.current) {
-                onMapMove?.(mapRef.current.getBounds());
-              }
+              if (mapRef.current) onMapMove?.(mapRef.current.getBounds());
             }, 400);
           });
         };
 
         initMap();
-
-        return () => {
-          clearTimeout(moveTimeoutRef.current);
-        };
+        return () => { clearTimeout(moveTimeoutRef.current); };
       }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+      // Build separate heatmap layers per occurrence type
+      const buildHeatmapLayers = useCallback((map: maplibregl.Map, geojson?: GeoJSON.FeatureCollection) => {
+        // Remove old heatmap layers/sources
+        heatLayersRef.current.forEach((id) => {
+          try { map.removeLayer(id); } catch { /* */ }
+          try { map.removeSource(id); } catch { /* */ }
+        });
+        heatLayersRef.current = [];
+
+        if (!geojson) return;
+
+        // Group features by type
+        const byType: Record<string, GeoJSON.Feature[]> = {};
+        geojson.features.forEach((f) => {
+          const t = (f.properties as any)?.type || "unknown";
+          if (!byType[t]) byType[t] = [];
+          byType[t].push(f);
+        });
+
+        Object.entries(byType).forEach(([type, features]) => {
+          const color = HEATMAP_COLORS[type] || "#FF3232";
+          const sourceId = `heatmap-${type}`;
+          const layerId = `heatmap-layer-${type}`;
+
+          map.addSource(sourceId, {
+            type: "geojson",
+            data: { type: "FeatureCollection", features },
+          });
+
+          map.addLayer({
+            id: layerId,
+            type: "heatmap",
+            source: sourceId,
+            maxzoom: 14,
+            paint: {
+              "heatmap-weight": ["interpolate", ["linear"], ["get", "votes"], 0, 0, 12, 1],
+              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 11, 0.6, 14, 1.2],
+              "heatmap-color": [
+                "interpolate", ["linear"], ["heatmap-density"],
+                0, "rgba(0,0,0,0)",
+                0.2, `${color}30`,
+                0.4, `${color}55`,
+                0.6, `${color}88`,
+                0.8, `${color}BB`,
+                1, `${color}EE`,
+              ],
+              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 11, 20, 14, 40],
+              "heatmap-opacity": 0.6,
+            },
+          });
+
+          heatLayersRef.current.push(layerId);
+        });
+      }, []);
 
       // Update alerts GeoJSON
       useEffect(() => {
         if (!mapRef.current || !readyRef.current || !alertsGeoJSON) return;
 
         try {
-          const heatSource = mapRef.current.getSource("alerts-heat") as maplibregl.GeoJSONSource;
-          heatSource?.setData(alertsGeoJSON);
-
           const pinSource = mapRef.current.getSource("alert-pins") as maplibregl.GeoJSONSource;
           pinSource?.setData(alertsGeoJSON);
 
-          // Feed serious alerts source (roubo/assalto only)
+          // Serious alerts
           const seriousFeatures = alertsGeoJSON.features.filter((f) => {
             const t = (f.properties as any)?.type;
             return t === "roubo" || t === "assalto";
           });
           const seriousSource = mapRef.current.getSource("alert-pins-serious") as maplibregl.GeoJSONSource;
           seriousSource?.setData({ type: "FeatureCollection", features: seriousFeatures });
-        } catch {
-          // sources may not exist yet
-        }
-      }, [alertsGeoJSON]);
+
+          // Rebuild heatmap layers
+          buildHeatmapLayers(mapRef.current, alertsGeoJSON);
+        } catch { /* sources may not exist yet */ }
+      }, [alertsGeoJSON, buildHeatmapLayers]);
 
       // Update user location marker
       useEffect(() => {
@@ -399,10 +380,7 @@ const MapCore = memo(
         if (!userMarkerRef.current) {
           const el = document.createElement("div");
           el.className = "ig-user-marker";
-          el.innerHTML = `
-            <div class="ig-user-pulse"></div>
-            <div class="ig-user-dot"></div>
-          `;
+          el.innerHTML = `<div class="ig-user-pulse"></div><div class="ig-user-dot"></div>`;
           userMarkerRef.current = new maplibregl.Marker({ element: el })
             .setLngLat(userCoords)
             .addTo(mapRef.current);
@@ -410,18 +388,12 @@ const MapCore = memo(
           userMarkerRef.current.setLngLat(userCoords);
         }
 
-        // Update radius circle
         try {
           const radiusM = userPlan === "pro" ? RAIO_PRO_M : RAIO_FREE_M;
-          const circle = turf.circle(userCoords, radiusM / 1000, {
-            steps: 64,
-            units: "kilometers",
-          });
+          const circle = turf.circle(userCoords, radiusM / 1000, { steps: 64, units: "kilometers" });
           const source = mapRef.current.getSource("user-radius") as maplibregl.GeoJSONSource;
           source?.setData(circle);
-        } catch {
-          // ignore
-        }
+        } catch { /* ignore */ }
       }, [userCoords, userPlan]);
 
       return (

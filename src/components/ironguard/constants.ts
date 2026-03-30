@@ -95,9 +95,23 @@ export const ALL_FILTERS: FilterType[] = [
   { id: "ajuda", lb: "Preciso de ajuda", ic: "🔧", c: D.teal, desc: "Assistência mecânica" },
   { id: "caça", lb: "Caça Moto", ic: "🔍", c: D.green, desc: "Motos roubadas em busca" },
   { id: "zona", lb: "Zonas de risco", ic: "🛡", c: D.purple, desc: "Regiões mapeadas" },
+  { id: "furto", lb: "Furto", ic: "🕵️", c: D.purple, desc: "Furtos sem violência" },
+  { id: "blitz", lb: "Blitz Policial", ic: "🚔", c: D.blue, desc: "Operações policiais" },
+  { id: "transito", lb: "Trânsito Intenso", ic: "🚗", c: D.orange, desc: "Congestionamentos" },
+  { id: "obra", lb: "Obra na Via", ic: "🚧", c: D.yellow, desc: "Interdições por obras" },
+  { id: "incendio", lb: "Incêndio", ic: "🔥", c: D.red, desc: "Focos de incêndio" },
+  { id: "veiculo_suspeito", lb: "Veículo Suspeito", ic: "🚐", c: D.pink, desc: "Veículos em atitude suspeita" },
 ];
 
-export const DEFAULT_ON = ["roubo", "assalto", "acidente", "perigo", "alagamento"];
+export const DEFAULT_ON = ["roubo", "assalto", "acidente", "perigo", "alagamento", "furto", "blitz"];
+
+/* ── User Types ── */
+export type UserType = "motoboy" | "motorista" | "civil";
+export const USER_TYPE_META: Record<UserType, { ic: string; lb: string }> = {
+  motoboy: { ic: "🏍", lb: "Motoboy" },
+  motorista: { ic: "🚗", lb: "Motorista" },
+  civil: { ic: "👤", lb: "Civil" },
+};
 
 /* ── Alerts ── */
 export interface Alert {
@@ -112,6 +126,7 @@ export interface Alert {
   lastSeen?: string;
   reporter?: string;
   reporterAvatar?: string;
+  reporterType?: UserType;
   medals?: string;
   bairro: string;
   ago: string;
@@ -123,12 +138,14 @@ export interface Alert {
 }
 
 export const ALERTS: Alert[] = [
-  { id: 1, type: "roubo", x: 44, y: 37, t: "Roubo CG 160 prata", plate: "ABC-1234", model: "Honda CG 160", vehicleColor: "Prata", lastSeen: "Consolação · 5 min", reporter: "Fabiano", reporterAvatar: "https://randomuser.me/api/portraits/men/32.jpg", medals: "🥇🥇🥈", bairro: "Consolação", ago: "1min", dist: "220m", v: 11, isNew: true, color: D.red, ic: "🏍" },
-  { id: 2, type: "assalto", x: 62, y: 52, t: "Dupla em moto armada", reporter: "Carlos", reporterAvatar: "https://randomuser.me/api/portraits/men/41.jpg", medals: "🥇🥈", bairro: "Bela Vista", ago: "8min", dist: "780m", v: 7, color: D.pink, ic: "⚠️" },
-  { id: 3, type: "alagamento", x: 28, y: 60, t: "Via bloqueada alagamento", reporter: "Renato", reporterAvatar: "https://randomuser.me/api/portraits/men/54.jpg", medals: "🥇🥇", bairro: "Bom Retiro", ago: "15min", dist: "1.4km", v: 4, color: D.blue, ic: "🌊" },
-  { id: 4, type: "acidente", x: 74, y: 44, t: "Colisão com caminhão", reporter: "Julio", reporterAvatar: "https://randomuser.me/api/portraits/men/67.jpg", medals: "🥇🥉", bairro: "Pinheiros", ago: "28min", dist: "1.9km", v: 5, color: D.orange, ic: "🚨" },
-  { id: 5, type: "roubo", x: 52, y: 68, t: "Yamaha Fazer 250 preta", plate: "XYZ-9876", model: "Yamaha Fazer 250", vehicleColor: "Preta", lastSeen: "Cambuci · 10 min", reporter: "Pedro", reporterAvatar: "https://randomuser.me/api/portraits/men/22.jpg", medals: "🥇", bairro: "Cambuci", ago: "52min", dist: "2.1km", v: 9, color: D.red, ic: "🏍" },
-  { id: 6, type: "assalto", x: 36, y: 48, t: "Celular roubado", reporter: "Ana", reporterAvatar: "https://randomuser.me/api/portraits/women/44.jpg", medals: "🥈🥈", bairro: "Sta Cecília", ago: "1h", dist: "580m", v: 3, color: D.pink, ic: "⚠️" },
+  { id: 1, type: "roubo", x: 44, y: 37, t: "Roubo CG 160 prata", plate: "ABC-1234", model: "Honda CG 160", vehicleColor: "Prata", lastSeen: "Cambuí · 5 min", reporter: "Fabiano", reporterAvatar: "https://randomuser.me/api/portraits/men/32.jpg", reporterType: "motoboy", medals: "🥇🥇🥈", bairro: "Cambuí", ago: "1min", dist: "220m", v: 11, isNew: true, color: D.red, ic: "🏍" },
+  { id: 2, type: "assalto", x: 62, y: 52, t: "Dupla em moto armada", reporter: "Carlos", reporterAvatar: "https://randomuser.me/api/portraits/men/41.jpg", reporterType: "motorista", medals: "🥇🥈", bairro: "Centro", ago: "8min", dist: "780m", v: 7, color: D.pink, ic: "⚠️" },
+  { id: 3, type: "alagamento", x: 28, y: 60, t: "Via bloqueada alagamento", reporter: "Renato", reporterAvatar: "https://randomuser.me/api/portraits/men/54.jpg", reporterType: "motoboy", medals: "🥇🥇", bairro: "Taquaral", ago: "15min", dist: "1.4km", v: 4, color: D.blue, ic: "🌊" },
+  { id: 4, type: "acidente", x: 74, y: 44, t: "Colisão com caminhão", reporter: "Julio", reporterAvatar: "https://randomuser.me/api/portraits/men/67.jpg", reporterType: "civil", medals: "🥇🥉", bairro: "Barão Geraldo", ago: "28min", dist: "1.9km", v: 5, color: D.orange, ic: "🚨" },
+  { id: 5, type: "roubo", x: 52, y: 68, t: "Yamaha Fazer 250 preta", plate: "XYZ-9876", model: "Yamaha Fazer 250", vehicleColor: "Preta", lastSeen: "Bosque · 10 min", reporter: "Pedro", reporterAvatar: "https://randomuser.me/api/portraits/men/22.jpg", reporterType: "motoboy", medals: "🥇", bairro: "Bosque", ago: "52min", dist: "2.1km", v: 9, color: D.red, ic: "🏍" },
+  { id: 6, type: "assalto", x: 36, y: 48, t: "Celular roubado", reporter: "Ana", reporterAvatar: "https://randomuser.me/api/portraits/women/44.jpg", reporterType: "civil", medals: "🥈🥈", bairro: "Guanabara", ago: "1h", dist: "580m", v: 3, color: D.pink, ic: "⚠️" },
+  { id: 7, type: "furto", x: 55, y: 40, t: "Furto de capacete", reporter: "Diego", reporterAvatar: "https://randomuser.me/api/portraits/men/15.jpg", reporterType: "motoboy", medals: "🥈", bairro: "Cambuí", ago: "35min", dist: "400m", v: 2, color: D.purple, ic: "🕵️" },
+  { id: 8, type: "blitz", x: 40, y: 55, t: "Blitz na Av. Norte-Sul", reporter: "Marcos", reporterAvatar: "https://randomuser.me/api/portraits/men/29.jpg", reporterType: "motorista", medals: "🥇", bairro: "Centro", ago: "12min", dist: "1.2km", v: 6, color: D.blue, ic: "🚔" },
 ];
 
 export const HEAT = [
@@ -156,4 +173,54 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "mapa", lb: "Mapa" },
   { id: "feed", lb: "Feed" },
   { id: "perfil", lb: "Perfil" },
+];
+
+/* ── Feed Posts ── */
+export interface FeedPost {
+  id: number;
+  type: "photo" | "video";
+  userName: string;
+  userAvatar: string;
+  userType: UserType;
+  timestamp: string;
+  caption: string;
+  mediaUrl: string;
+  occurrenceType: string;
+  location: string;
+  likes: number;
+  comments: number;
+  shares: number;
+}
+
+export const FEED_POSTS: FeedPost[] = [
+  {
+    id: 1, type: "photo", userName: "Fabiano", userAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
+    userType: "motoboy", timestamp: "2min", caption: "Cuidado galera, roubo de CG na região do Cambuí agora! Dois em uma moto preta.",
+    mediaUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop",
+    occurrenceType: "roubo", location: "Cambuí, Campinas", likes: 24, comments: 8, shares: 12
+  },
+  {
+    id: 2, type: "video", userName: "Carlos", userAvatar: "https://randomuser.me/api/portraits/men/41.jpg",
+    userType: "motorista", timestamp: "8min", caption: "Flagra de assalto no Centro agora. Fiquem atentos na região da Rua 13 de Maio.",
+    mediaUrl: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600&h=900&fit=crop",
+    occurrenceType: "assalto", location: "Centro, Campinas", likes: 45, comments: 15, shares: 30
+  },
+  {
+    id: 3, type: "photo", userName: "Renato", userAvatar: "https://randomuser.me/api/portraits/men/54.jpg",
+    userType: "motoboy", timestamp: "15min", caption: "Alagamento pesado no Taquaral. Via completamente bloqueada, desviem pela Av. Anchieta.",
+    mediaUrl: "https://images.unsplash.com/photo-1547683905-f686c993aae5?w=600&h=400&fit=crop",
+    occurrenceType: "alagamento", location: "Taquaral, Campinas", likes: 18, comments: 5, shares: 22
+  },
+  {
+    id: 4, type: "video", userName: "Marcos", userAvatar: "https://randomuser.me/api/portraits/men/29.jpg",
+    userType: "motorista", timestamp: "12min", caption: "Blitz na Norte-Sul sentido centro. Documentação em dia, sem problemas. Mas tá parando todo mundo.",
+    mediaUrl: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=900&fit=crop",
+    occurrenceType: "blitz", location: "Centro, Campinas", likes: 32, comments: 10, shares: 8
+  },
+  {
+    id: 5, type: "photo", userName: "Ana", userAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
+    userType: "civil", timestamp: "1h", caption: "Tiveram meu celular roubado aqui na Guanabara. Tomem cuidado, estão agindo em dupla.",
+    mediaUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop",
+    occurrenceType: "assalto", location: "Guanabara, Campinas", likes: 56, comments: 22, shares: 18
+  },
 ];

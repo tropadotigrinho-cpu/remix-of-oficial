@@ -1,7 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { ALERTS, type Alert } from "@/components/ironguard/constants";
-import { RAIO_FREE_M, RAIO_PRO_M } from "@/lib/mapConstants";
-import * as turf from "@turf/turf";
 
 interface GeoJSONFeature {
   type: "Feature";
@@ -14,11 +12,10 @@ interface GeoJSONCollection {
   features: GeoJSONFeature[];
 }
 
-/**
- * Provides alerts as GeoJSON, filtered by plan radius.
- * Currently uses mock data. When Supabase tables are ready,
- * this will subscribe to Realtime channels.
- */
+// Campinas center
+const CAMPINAS_LNG = -47.0626;
+const CAMPINAS_LAT = -22.9064;
+
 export function useMapAlerts(
   userPlan: "free" | "pro",
   userCoords: [number, number] | null,
@@ -28,12 +25,9 @@ export function useMapAlerts(
 
   const filteredAlerts = useMemo(() => {
     let result = alerts;
-
-    // Filter by type
     if (activeFilters.length > 0) {
       result = result.filter((a) => activeFilters.includes(a.type));
     }
-
     return result;
   }, [alerts, activeFilters]);
 
@@ -44,10 +38,9 @@ export function useMapAlerts(
         type: "Feature" as const,
         geometry: {
           type: "Point" as const,
-          // Convert percentage positions to approximate lng/lat around SP center
           coordinates: [
-            -46.6333 + ((a.x - 50) / 100) * 0.08,
-            -23.5505 + ((a.y - 50) / 100) * 0.06,
+            CAMPINAS_LNG + ((a.x - 50) / 100) * 0.08,
+            CAMPINAS_LAT + ((a.y - 50) / 100) * 0.06,
           ] as [number, number],
         },
         properties: {
