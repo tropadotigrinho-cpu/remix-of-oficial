@@ -1,81 +1,121 @@
 
 
-# Redesign de Pins, Raios, GPS Real-time, Popup de Alerta e Tabs Laterais
+# Redesign Completo: Heatmap, Pins, GPS, Feed e Filtros
 
 ## Resumo
-Redesign premium e minimalista dos pins de ocorrência, zonas de risco com gradiente concêntrico, GPS funcional em tempo real, popup de alerta compacto no estilo da HomePage, e tabs laterais mais clean.
+Heatmap colorido por tipo de ocorrência, pins com ícones visíveis, GPS real-time funcional, centro em Campinas-SP, popup de alerta compacto, página de Feed estilo Reels/posts, mais tipos de ocorrências nos filtros, e perfis para motoboy/motorista/civil.
 
 ---
 
-## 1. Pins de Ocorrência — Design Premium (`MapCore.tsx`)
+## 1. Heatmap Colorido por Tipo de Ocorrência (`MapCore.tsx`)
 
-**Atual:** Círculo escuro 14px + emoji 16px por cima. Sem refinamento visual.
+**Problema:** Heatmap atual usa uma única paleta vermelho/laranja para todos os tipos.
 
-**Novo design:**
-- Background circle: `12px` radius, cor da ocorrência com `opacity: 0.2` (não mais preto)
-- Inner circle: `7px` radius, cor sólida da ocorrência com `opacity: 0.9`
-- Emoji icon: `text-size: 14`, centrado, `text-allow-overlap: true`
-- Sem stroke/border em nenhum nível — clean
+**Solução:** Criar múltiplas camadas de heatmap — uma por tipo de ocorrência selecionado. Cada camada usa a cor do tipo:
+- `roubo` → vermelho (`#FF3232`)
+- `assalto` → rosa (`#FF2D78`)
+- `acidente` → laranja (`#FF7A00`)
+- `alagamento` → azul (`#3D8EFF`)
+- `perigo` → amarelo (`#FFD000`)
 
-**Clusters:** Mesma paleta, sem stroke, `circle-opacity: 0.8`
+Ao invés de 1 heatmap genérico, separar os features por tipo e criar heatmaps com `heatmap-color` usando a cor específica. Cada camada tem `heatmap-opacity: 0.6` para blending natural.
 
-## 2. Raios/Halos Gradiente Concêntricos (`MapCore.tsx`)
+**Pins:** Manter o sistema atual de circles + emoji, mas:
+- Outer glow: `radius: 14`, `opacity: 0.25`, `circle-blur: 0.8`
+- Inner: `radius: 8`, `opacity: 1.0`
+- Emoji `text-size: 16`, `text-offset: [0, -0.1]` (centrado no circle, não flutuando acima)
 
-**Somente para roubo/assalto (alertas graves):**
-- Camada `alert-serious-halo`: `circle-blur: 1.5`, `circle-opacity: 0.12`, radius interpolado por zoom (40→90→130px)
-- Cor extraída da propriedade `color` do feature
-- Sem stroke, sem arco — puro degradê radial
-- Sobreposição de dois alertas graves próximos cria efeito concêntrico natural
+## 2. Centro em Campinas-SP (`mapConstants.ts` + `useMapAlerts.ts`)
 
-**Zonas de risco:**
-- Remover `user-radius-stroke` (borda tracejada do raio do usuário)
-- `user-radius-fill`: `fill-opacity: 0.04` — quase invisível, apenas indicativo
-- `zonas-risco-fill`: manter, `fill-opacity: 0.1` — mais sutil
+- Mudar `SP_CENTER` para `[-47.0626, -22.9064]` (Campinas)
+- Atualizar coordenadas dos alertas mock em `useMapAlerts.ts` para usar Campinas como base
+- Atualizar zonas de risco em `MapCore.tsx` para bairros de Campinas (Centro, Cambuí, Taquaral, Barão Geraldo, Bosque)
 
-## 3. GPS Real-time Funcional (`MapOrchestrator.tsx` + `useUserLocation.ts`)
+## 3. GPS Real-time Funcional (`MapOrchestrator.tsx` + `MapCore.tsx`)
 
-**Problema:** GPS só inicia tracking ao clicar no botão. Precisa funcionar automaticamente.
-
-**Mudanças:**
-- `MapOrchestrator`: chamar `startTracking()` automaticamente no mount via `useEffect`
-- Quando `userCoords` muda, `MapCore` já atualiza o marker e o raio — isso já funciona
-- Ao clicar GPS, fazer `flyTo(userCoords)` com zoom 15 para centralizar
-- Atualizar estilo do botão GPS para indicar estado ativo (tracking vs idle)
+Já está auto-starting no mount. Verificar que:
+- `flyTo(userCoords, 15)` funciona ao clicar GPS
+- O user marker (pulsing dot) se atualiza com `watchPosition`
+- O raio do usuário acompanha as coordenadas em tempo real
+- Sem fallback para SP_CENTER quando GPS está ativo — só centraliza no user
 
 ## 4. Popup de Alerta Compacto (`MapaPage.tsx`)
 
-**Atual:** O toast no topo é simples. O `OccurrenceModal` é um sheet grande com cards scrolláveis.
+**Atual:** Já existe um popup compacto. Refinar para ficar igual ao banner de zona de risco da HomePage:
+- Dot pulsante com `boxShadow` da cor da ocorrência
+- Ícone da ocorrência + título + bairro + tempo
+- Altura compacta (~60px) para não atrapalhar visualização
+- Tap abre modal completo
 
-**Novo:** Quando um pin é clicado, mostrar um popup compacto (não o modal gigante) no estilo do banner de "ZONA DE RISCO" da HomePage:
-- Altura: ~70px, posicionado abaixo das tabs de filtro (top: ~148px)
-- Layout: ícone da ocorrência | título + bairro + tempo | distância + confirmações
-- Dot pulsante com cor da ocorrência
-- Botão X para fechar
-- Background: `${color}0A`, border: `${color}1A`, borderRadius: 14
-- Tap no popup abre o `OccurrenceModal` completo
+## 5. Página de Feed (`FeedPage.tsx` — novo)
 
-**Isso substitui** a abertura direta do OccurrenceModal ao clicar no pin — agora é: pin → popup compacto → tap popup → modal completo.
+**Estrutura:**
+- Header com filtros (mesmos da MapaPage + pesquisa)
+- Scroll vertical infinito com dois tipos de conteúdo:
 
-## 5. Tabs Laterais Minimalistas (`MapControls.tsx`)
+**Posts de foto:**
+```
+┌──────────────────────────┐
+│ [avatar] Nome · 2min     │
+│ Legenda do post          │
+│ ┌──────────────────────┐ │
+│ │     📷 Mídia/Foto    │ │
+│ └──────────────────────┘ │
+│ [compartilhar] [salvar]  │
+└──────────────────────────┘
+```
 
-**Atual:** 40px botões com `borderRadius: 12`, background escuro com border.
+**Posts de vídeo (estilo Reels):**
+- Full-height card (80vh) com vídeo/placeholder de fundo
+- Overlay com avatar, nome, legenda na parte inferior
+- Botões laterais: curtir, comentar, compartilhar
+- Scroll vertical snap entre reels
+- Indicador de tipo de ocorrência (badge colorido)
 
-**Novo design premium:**
-- Tamanho: `36px × 36px`
-- `borderRadius: 50%` (totalmente circular)
-- Background: `rgba(11,16,24,0.7)` sem border visível (`border: 1px solid transparent`)
-- Backdrop blur mais forte: `blur(20px)`
-- Ícones: `14px`, stroke-width `1.5` (mais fino)
-- Estado ativo: glow sutil `box-shadow: 0 0 10px ${color}30`
-- Gap entre botões: `8px`
-- Sem shadow pesado — apenas blur
+**Dados:** Mock data com posts baseados nos alertas existentes + posts de foto inventados. Cada post tem: `id, type, userName, userAvatar, timestamp, caption, mediaUrl, mediaType (photo|video), occurrenceType, location`.
 
-## Arquivos Modificados
+## 6. Mais Tipos de Ocorrências (`constants.ts`)
 
-| Arquivo | Mudanças |
-|---------|----------|
-| `MapCore.tsx` | Redesign pin layers, ajustar halos, remover user-radius-stroke, suavizar opacidades |
-| `MapControls.tsx` | Botões circulares 36px, ícones 14px, sem borders visíveis, glow ativo |
-| `MapOrchestrator.tsx` | Auto-start GPS tracking no mount, flyTo com zoom ao clicar GPS |
-| `MapaPage.tsx` | Popup compacto ao clicar pin (estilo zona de risco), tap abre modal completo |
+Adicionar aos `ALL_FILTERS`:
+- `furto` → "Furto" 🕵️ (cor: purple) — Furtos sem violência
+- `blitz` → "Blitz Policial" 🚔 (cor: blue) — Operações policiais
+- `transito` → "Trânsito Intenso" 🚗 (cor: orange) — Congestionamentos
+- `obra` → "Obra na Via" 🚧 (cor: yellow) — Interdições por obras
+- `incendio` → "Incêndio" 🔥 (cor: red) — Focos de incêndio
+- `veiculo_suspeito` → "Veículo Suspeito" 🚐 (cor: pink) — Veículos em atitude suspeita
+
+Atualizar `DEFAULT_ON` para incluir os mais relevantes.
+
+## 7. Filtros na Página de Feed
+
+- Barra de filtros idêntica à da MapaPage (horizontal scroll de chips)
+- Barra de busca para pesquisar por bairro, tipo ou texto
+- Botão de configuração que abre o mesmo sheet de personalização
+- Filtros afetam quais posts aparecem no feed
+
+## 8. Perfis por Tipo de Usuário
+
+Adicionar ao config/constants um campo `userType: "motoboy" | "motorista" | "civil"`. Por enquanto é visual — badge no perfil e no feed mostra o tipo do reporter. Ícones:
+- Motoboy: 🏍
+- Motorista: 🚗
+- Civil: 👤
+
+## 9. Tabs Laterais do Mapa — Sem Mudanças
+
+Já foram redesenhadas na iteração anterior (36px circular, blur, sem borders). Manter como está.
+
+---
+
+## Arquivos
+
+| Arquivo | Ação |
+|---------|------|
+| `src/lib/mapConstants.ts` | Centro Campinas |
+| `src/components/ironguard/constants.ts` | +6 novos tipos de ocorrência, user types |
+| `src/hooks/useMapAlerts.ts` | Coordenadas base Campinas |
+| `src/components/map/MapCore.tsx` | Heatmap por tipo, pin offset fix, zonas Campinas |
+| `src/components/map/MapOrchestrator.tsx` | GPS refinements |
+| `src/components/ironguard/MapaPage.tsx` | Popup refinement |
+| `src/components/ironguard/FeedPage.tsx` | **Novo** — página de feed com reels + posts |
+| `src/components/ironguard/IronGuardApp.tsx` | Render FeedPage na nav "feed" |
 
