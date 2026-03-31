@@ -129,22 +129,29 @@ const MapCore = memo(
               id: "user-radius-fill",
               type: "fill",
               source: "user-radius",
-              paint: { "fill-color": "#3D8EFF", "fill-opacity": 0.04 },
+              paint: { "fill-color": "#00D4FF", "fill-opacity": 0.03 },
+            });
+            map.addLayer({
+              id: "user-radius-line",
+              type: "line",
+              source: "user-radius",
+              paint: { "line-color": "#00D4FF", "line-opacity": 0.15, "line-width": 1, "line-dasharray": [4, 4] },
             });
 
-            // ── Zonas de risco (Campinas bairros) ──
+            // ── Zonas de risco (Campinas) — military dashed perimeters ──
             const zonasRisco: GeoJSON.FeatureCollection = {
               type: "FeatureCollection",
               features: [
-                turf.circle([-47.060, -22.900], 0.6, { steps: 48, units: "kilometers", properties: { nivel: 4, nome: "Centro" } }),
-                turf.circle([-47.045, -22.895], 0.5, { steps: 48, units: "kilometers", properties: { nivel: 3, nome: "Cambuí" } }),
-                turf.circle([-47.040, -22.875], 0.7, { steps: 48, units: "kilometers", properties: { nivel: 2, nome: "Taquaral" } }),
-                turf.circle([-47.085, -22.860], 0.4, { steps: 48, units: "kilometers", properties: { nivel: 5, nome: "Barão Geraldo" } }),
-                turf.circle([-47.070, -22.910], 0.55, { steps: 48, units: "kilometers", properties: { nivel: 1, nome: "Bosque" } }),
+                turf.circle([-47.060, -22.900], 0.6, { steps: 64, units: "kilometers", properties: { nivel: 4, nome: "Centro" } }),
+                turf.circle([-47.045, -22.895], 0.5, { steps: 64, units: "kilometers", properties: { nivel: 3, nome: "Cambuí" } }),
+                turf.circle([-47.040, -22.875], 0.7, { steps: 64, units: "kilometers", properties: { nivel: 2, nome: "Taquaral" } }),
+                turf.circle([-47.085, -22.860], 0.4, { steps: 64, units: "kilometers", properties: { nivel: 5, nome: "Barão Geraldo" } }),
+                turf.circle([-47.070, -22.910], 0.55, { steps: 64, units: "kilometers", properties: { nivel: 1, nome: "Bosque" } }),
               ],
             };
 
             map.addSource("zonas-risco", { type: "geojson", data: zonasRisco });
+            // Subtle fill
             map.addLayer({
               id: "zonas-risco-fill",
               type: "fill",
@@ -155,7 +162,23 @@ const MapCore = memo(
                   1, "#FFD000", 2, "#FF7A00", 3, "#FF3232", 4, "#9D6FFF", 5, "#8B0000",
                   "#FF3232",
                 ],
-                "fill-opacity": 0.1,
+                "fill-opacity": 0.06,
+              },
+            });
+            // Dashed perimeter line — military style
+            map.addLayer({
+              id: "zonas-risco-line",
+              type: "line",
+              source: "zonas-risco",
+              paint: {
+                "line-color": [
+                  "match", ["get", "nivel"],
+                  1, "#FFD000", 2, "#FF7A00", 3, "#FF3232", 4, "#9D6FFF", 5, "#8B0000",
+                  "#FF3232",
+                ],
+                "line-opacity": 0.3,
+                "line-width": 1.2,
+                "line-dasharray": [3, 3],
               },
             });
 
@@ -171,36 +194,18 @@ const MapCore = memo(
               clusterRadius: 50,
             });
 
-            // Serious alert halos
-            map.addSource("alert-pins-serious", {
-              type: "geojson",
-              data: { type: "FeatureCollection", features: [] },
-            });
-
-            map.addLayer({
-              id: "alert-serious-halo",
-              type: "circle",
-              source: "alert-pins-serious",
-              paint: {
-                "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 40, 14, 90, 17, 130],
-                "circle-color": ["get", "color"],
-                "circle-opacity": 0.12,
-                "circle-blur": 1.5,
-                "circle-stroke-width": 0,
-              },
-            });
-
-            // Clusters
+            // Clusters — minimal military style
             map.addLayer({
               id: "alert-clusters",
               type: "circle",
               source: "alert-pins",
               filter: ["has", "point_count"],
               paint: {
-                "circle-color": ["step", ["get", "point_count"], "#FF7A00", 5, "#FF3232", 10, "#FF2D78"],
-                "circle-radius": ["step", ["get", "point_count"], 16, 5, 22, 10, 28],
-                "circle-opacity": 0.8,
-                "circle-stroke-width": 0,
+                "circle-color": "rgba(0,0,0,0.5)",
+                "circle-radius": ["step", ["get", "point_count"], 18, 5, 24, 10, 30],
+                "circle-opacity": 1,
+                "circle-stroke-width": 1,
+                "circle-stroke-color": "rgba(0,212,255,0.4)",
               },
             });
 
@@ -209,40 +214,11 @@ const MapCore = memo(
               type: "symbol",
               source: "alert-pins",
               filter: ["has", "point_count"],
-              layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11 },
-              paint: { "text-color": "#ffffff" },
+              layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11, "text-font": ["Open Sans Bold"] },
+              paint: { "text-color": "#00D4FF" },
             });
 
-            // Pin outer glow
-            map.addLayer({
-              id: "alert-unclustered-glow",
-              type: "circle",
-              source: "alert-pins",
-              filter: ["!", ["has", "point_count"]],
-              paint: {
-                "circle-radius": 14,
-                "circle-color": ["get", "color"],
-                "circle-opacity": 0.25,
-                "circle-blur": 0.8,
-                "circle-stroke-width": 0,
-              },
-            });
-
-            // Pin inner
-            map.addLayer({
-              id: "alert-unclustered",
-              type: "circle",
-              source: "alert-pins",
-              filter: ["!", ["has", "point_count"]],
-              paint: {
-                "circle-radius": 8,
-                "circle-color": ["get", "color"],
-                "circle-opacity": 1.0,
-                "circle-stroke-width": 0,
-              },
-            });
-
-            // Pin emoji
+            // Pin — EMOJI ONLY, no colored circles
             map.addLayer({
               id: "alert-unclustered-icon",
               type: "symbol",
@@ -250,10 +226,23 @@ const MapCore = memo(
               filter: ["!", ["has", "point_count"]],
               layout: {
                 "text-field": ["get", "icon"],
-                "text-size": 16,
+                "text-size": 22,
                 "text-allow-overlap": true,
                 "text-anchor": "center",
-                "text-offset": [0, -0.1],
+                "text-offset": [0, 0],
+              },
+            });
+
+            // Invisible circle for click events on pins
+            map.addLayer({
+              id: "alert-unclustered",
+              type: "circle",
+              source: "alert-pins",
+              filter: ["!", ["has", "point_count"]],
+              paint: {
+                "circle-radius": 16,
+                "circle-color": "rgba(0,0,0,0)",
+                "circle-opacity": 0,
               },
             });
 
@@ -297,7 +286,7 @@ const MapCore = memo(
         return () => { clearTimeout(moveTimeoutRef.current); };
       }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-      // Build separate heatmap layers per occurrence type
+      // Build military-style heatmap layers per occurrence type — concentric gradients
       const buildHeatmapLayers = useCallback((map: maplibregl.Map, geojson?: GeoJSON.FeatureCollection) => {
         // Remove old heatmap layers/sources
         heatLayersRef.current.forEach((id) => {
@@ -326,25 +315,28 @@ const MapCore = memo(
             data: { type: "FeatureCollection", features },
           });
 
+          // Military-grade heatmap: tight core → wide diffuse edge, low opacity
           map.addLayer({
             id: layerId,
             type: "heatmap",
             source: sourceId,
-            maxzoom: 14,
+            maxzoom: 16,
             paint: {
-              "heatmap-weight": ["interpolate", ["linear"], ["get", "votes"], 0, 0, 12, 1],
-              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 11, 0.6, 14, 1.2],
+              "heatmap-weight": ["interpolate", ["linear"], ["get", "votes"], 0, 0.3, 6, 0.7, 12, 1],
+              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 13, 0.8, 16, 1.5],
               "heatmap-color": [
                 "interpolate", ["linear"], ["heatmap-density"],
-                0, "rgba(0,0,0,0)",
-                0.2, `${color}30`,
-                0.4, `${color}55`,
-                0.6, `${color}88`,
-                0.8, `${color}BB`,
-                1, `${color}EE`,
+                0,    "rgba(0,0,0,0)",
+                0.05, `${color}08`,
+                0.15, `${color}15`,
+                0.3,  `${color}28`,
+                0.5,  `${color}45`,
+                0.7,  `${color}70`,
+                0.85, `${color}A0`,
+                1,    `${color}D0`,
               ],
-              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 11, 20, 14, 40],
-              "heatmap-opacity": 0.6,
+              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, 30, 13, 55, 16, 80],
+              "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.7, 14, 0.5, 16, 0.35],
             },
           });
 
@@ -359,14 +351,6 @@ const MapCore = memo(
         try {
           const pinSource = mapRef.current.getSource("alert-pins") as maplibregl.GeoJSONSource;
           pinSource?.setData(alertsGeoJSON);
-
-          // Serious alerts
-          const seriousFeatures = alertsGeoJSON.features.filter((f) => {
-            const t = (f.properties as any)?.type;
-            return t === "roubo" || t === "assalto";
-          });
-          const seriousSource = mapRef.current.getSource("alert-pins-serious") as maplibregl.GeoJSONSource;
-          seriousSource?.setData({ type: "FeatureCollection", features: seriousFeatures });
 
           // Rebuild heatmap layers
           buildHeatmapLayers(mapRef.current, alertsGeoJSON);
