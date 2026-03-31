@@ -17,16 +17,12 @@ export default function MapaPage() {
   const visibleFilters = [{ id: "all", lb: "Todos", ic: "◉", c: D.text, desc: "" }, ...ALL_FILTERS.filter((f) => activeOn.includes(f.id))];
 
   const handlePinClick = (props: Record<string, unknown>) => {
-    // Show compact popup first
-    setQuickAlert(props);
-  };
-
-  const handlePopupTap = () => {
-    if (!quickAlert) return;
-    const alert = ALERTS.find((a) => a.id === Number(quickAlert.id));
+    // Open modal directly
+    const alert = ALERTS.find((a) => a.id === Number(props.id));
     if (alert) {
       setSelItem(alert);
-      setQuickAlert(null);
+    } else {
+      setQuickAlert(props);
     }
   };
 
