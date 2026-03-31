@@ -171,36 +171,18 @@ const MapCore = memo(
               clusterRadius: 50,
             });
 
-            // Serious alert halos
-            map.addSource("alert-pins-serious", {
-              type: "geojson",
-              data: { type: "FeatureCollection", features: [] },
-            });
-
-            map.addLayer({
-              id: "alert-serious-halo",
-              type: "circle",
-              source: "alert-pins-serious",
-              paint: {
-                "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 40, 14, 90, 17, 130],
-                "circle-color": ["get", "color"],
-                "circle-opacity": 0.12,
-                "circle-blur": 1.5,
-                "circle-stroke-width": 0,
-              },
-            });
-
-            // Clusters
+            // Clusters — minimal military style
             map.addLayer({
               id: "alert-clusters",
               type: "circle",
               source: "alert-pins",
               filter: ["has", "point_count"],
               paint: {
-                "circle-color": ["step", ["get", "point_count"], "#FF7A00", 5, "#FF3232", 10, "#FF2D78"],
-                "circle-radius": ["step", ["get", "point_count"], 16, 5, 22, 10, 28],
-                "circle-opacity": 0.8,
-                "circle-stroke-width": 0,
+                "circle-color": "rgba(0,0,0,0.5)",
+                "circle-radius": ["step", ["get", "point_count"], 18, 5, 24, 10, 30],
+                "circle-opacity": 1,
+                "circle-stroke-width": 1,
+                "circle-stroke-color": "rgba(0,212,255,0.4)",
               },
             });
 
@@ -209,40 +191,11 @@ const MapCore = memo(
               type: "symbol",
               source: "alert-pins",
               filter: ["has", "point_count"],
-              layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11 },
-              paint: { "text-color": "#ffffff" },
+              layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11, "text-font": ["Open Sans Bold"] },
+              paint: { "text-color": "#00D4FF" },
             });
 
-            // Pin outer glow
-            map.addLayer({
-              id: "alert-unclustered-glow",
-              type: "circle",
-              source: "alert-pins",
-              filter: ["!", ["has", "point_count"]],
-              paint: {
-                "circle-radius": 14,
-                "circle-color": ["get", "color"],
-                "circle-opacity": 0.25,
-                "circle-blur": 0.8,
-                "circle-stroke-width": 0,
-              },
-            });
-
-            // Pin inner
-            map.addLayer({
-              id: "alert-unclustered",
-              type: "circle",
-              source: "alert-pins",
-              filter: ["!", ["has", "point_count"]],
-              paint: {
-                "circle-radius": 8,
-                "circle-color": ["get", "color"],
-                "circle-opacity": 1.0,
-                "circle-stroke-width": 0,
-              },
-            });
-
-            // Pin emoji
+            // Pin — EMOJI ONLY, no colored circles
             map.addLayer({
               id: "alert-unclustered-icon",
               type: "symbol",
@@ -250,10 +203,23 @@ const MapCore = memo(
               filter: ["!", ["has", "point_count"]],
               layout: {
                 "text-field": ["get", "icon"],
-                "text-size": 16,
+                "text-size": 22,
                 "text-allow-overlap": true,
                 "text-anchor": "center",
-                "text-offset": [0, -0.1],
+                "text-offset": [0, 0],
+              },
+            });
+
+            // Invisible circle for click events on pins
+            map.addLayer({
+              id: "alert-unclustered",
+              type: "circle",
+              source: "alert-pins",
+              filter: ["!", ["has", "point_count"]],
+              paint: {
+                "circle-radius": 16,
+                "circle-color": "rgba(0,0,0,0)",
+                "circle-opacity": 0,
               },
             });
 
