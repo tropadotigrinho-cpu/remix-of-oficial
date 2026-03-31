@@ -17,16 +17,12 @@ export default function MapaPage() {
   const visibleFilters = [{ id: "all", lb: "Todos", ic: "◉", c: D.text, desc: "" }, ...ALL_FILTERS.filter((f) => activeOn.includes(f.id))];
 
   const handlePinClick = (props: Record<string, unknown>) => {
-    // Show compact popup first
-    setQuickAlert(props);
-  };
-
-  const handlePopupTap = () => {
-    if (!quickAlert) return;
-    const alert = ALERTS.find((a) => a.id === Number(quickAlert.id));
+    // Open modal directly
+    const alert = ALERTS.find((a) => a.id === Number(props.id));
     if (alert) {
       setSelItem(alert);
-      setQuickAlert(null);
+    } else {
+      setQuickAlert(props);
     }
   };
 
@@ -68,42 +64,7 @@ export default function MapaPage() {
         </div>
       </div>
 
-      {/* Compact alert popup (pin click) */}
-      {quickAlert && !selItem && (
-        <div style={{ position: "absolute", top: 148, left: 16, right: 16, zIndex: 10 }}>
-          <div
-            onClick={handlePopupTap}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 14px",
-              background: `${getAlertMeta(String(quickAlert.type)).c}0A`,
-              border: `1px solid ${getAlertMeta(String(quickAlert.type)).c}1A`,
-              borderRadius: 14,
-              backdropFilter: "blur(12px)",
-              cursor: "pointer",
-              transition: "all .2s",
-            }}
-          >
-            <div style={{ fontSize: 20 }}>{getAlertMeta(String(quickAlert.type)).ic}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: getAlertMeta(String(quickAlert.type)).c, letterSpacing: 0.3 }}>
-                {String(quickAlert.title || getAlertMeta(String(quickAlert.type)).lb).toUpperCase()}
-              </div>
-              <div style={{ fontSize: 11, color: D.sub, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                📍 {String(quickAlert.bairro || "São Paulo")} · {String(quickAlert.votes || 0)} confirmações
-              </div>
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); setQuickAlert(null); }}
-              style={{ background: "none", border: "none", color: D.muted, cursor: "pointer", padding: 0, display: "flex", flexShrink: 0 }}
-            >
-              <CloseIc />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Quick alert popup removed — pin click opens modal directly */}
 
       {/* Toast (default risk zone) */}
       {toast && !selItem && !quickAlert && (
