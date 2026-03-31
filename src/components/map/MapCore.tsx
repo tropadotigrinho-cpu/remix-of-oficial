@@ -263,7 +263,7 @@ const MapCore = memo(
         return () => { clearTimeout(moveTimeoutRef.current); };
       }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-      // Build separate heatmap layers per occurrence type
+      // Build military-style heatmap layers per occurrence type — concentric gradients
       const buildHeatmapLayers = useCallback((map: maplibregl.Map, geojson?: GeoJSON.FeatureCollection) => {
         // Remove old heatmap layers/sources
         heatLayersRef.current.forEach((id) => {
@@ -292,25 +292,28 @@ const MapCore = memo(
             data: { type: "FeatureCollection", features },
           });
 
+          // Military-grade heatmap: tight core → wide diffuse edge, low opacity
           map.addLayer({
             id: layerId,
             type: "heatmap",
             source: sourceId,
-            maxzoom: 14,
+            maxzoom: 16,
             paint: {
-              "heatmap-weight": ["interpolate", ["linear"], ["get", "votes"], 0, 0, 12, 1],
-              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 11, 0.6, 14, 1.2],
+              "heatmap-weight": ["interpolate", ["linear"], ["get", "votes"], 0, 0.3, 6, 0.7, 12, 1],
+              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 13, 0.8, 16, 1.5],
               "heatmap-color": [
                 "interpolate", ["linear"], ["heatmap-density"],
-                0, "rgba(0,0,0,0)",
-                0.2, `${color}30`,
-                0.4, `${color}55`,
-                0.6, `${color}88`,
-                0.8, `${color}BB`,
-                1, `${color}EE`,
+                0,    "rgba(0,0,0,0)",
+                0.05, `${color}08`,
+                0.15, `${color}15`,
+                0.3,  `${color}28`,
+                0.5,  `${color}45`,
+                0.7,  `${color}70`,
+                0.85, `${color}A0`,
+                1,    `${color}D0`,
               ],
-              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 11, 20, 14, 40],
-              "heatmap-opacity": 0.6,
+              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, 30, 13, 55, 16, 80],
+              "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.7, 14, 0.5, 16, 0.35],
             },
           });
 
@@ -325,14 +328,6 @@ const MapCore = memo(
         try {
           const pinSource = mapRef.current.getSource("alert-pins") as maplibregl.GeoJSONSource;
           pinSource?.setData(alertsGeoJSON);
-
-          // Serious alerts
-          const seriousFeatures = alertsGeoJSON.features.filter((f) => {
-            const t = (f.properties as any)?.type;
-            return t === "roubo" || t === "assalto";
-          });
-          const seriousSource = mapRef.current.getSource("alert-pins-serious") as maplibregl.GeoJSONSource;
-          seriousSource?.setData({ type: "FeatureCollection", features: seriousFeatures });
 
           // Rebuild heatmap layers
           buildHeatmapLayers(mapRef.current, alertsGeoJSON);
