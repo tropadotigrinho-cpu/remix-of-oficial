@@ -138,48 +138,67 @@ const MapCore = memo(
               paint: { "line-color": "#00D4FF", "line-opacity": 0.15, "line-width": 1, "line-dasharray": [4, 4] },
             });
 
-            // ── Zonas de risco (Campinas) — military dashed perimeters ──
-            const zonasRisco: GeoJSON.FeatureCollection = {
-              type: "FeatureCollection",
-              features: [
-                turf.circle([-47.060, -22.900], 0.6, { steps: 64, units: "kilometers", properties: { nivel: 4, nome: "Centro" } }),
-                turf.circle([-47.045, -22.895], 0.5, { steps: 64, units: "kilometers", properties: { nivel: 3, nome: "Cambuí" } }),
-                turf.circle([-47.040, -22.875], 0.7, { steps: 64, units: "kilometers", properties: { nivel: 2, nome: "Taquaral" } }),
-                turf.circle([-47.085, -22.860], 0.4, { steps: 64, units: "kilometers", properties: { nivel: 5, nome: "Barão Geraldo" } }),
-                turf.circle([-47.070, -22.910], 0.55, { steps: 64, units: "kilometers", properties: { nivel: 1, nome: "Bosque" } }),
-              ],
-            };
+            // ── Zonas de risco — concentric gradient overlay (not solid) ──
+            const zonasDef = [
+              { center: [-47.060, -22.900] as [number, number], r: 0.6, nivel: 4, nome: "Centro", color: "#9D6FFF" },
+              { center: [-47.045, -22.895] as [number, number], r: 0.5, nivel: 3, nome: "Cambuí", color: "#FF3232" },
+              { center: [-47.040, -22.875] as [number, number], r: 0.7, nivel: 2, nome: "Taquaral", color: "#FF7A00" },
+              { center: [-47.085, -22.860] as [number, number], r: 0.4, nivel: 5, nome: "Barão Geraldo", color: "#8B0000" },
+              { center: [-47.070, -22.910] as [number, number], r: 0.55, nivel: 1, nome: "Bosque", color: "#FFD000" },
+            ];
 
-            map.addSource("zonas-risco", { type: "geojson", data: zonasRisco });
-            // Subtle fill
-            map.addLayer({
-              id: "zonas-risco-fill",
-              type: "fill",
-              source: "zonas-risco",
-              paint: {
-                "fill-color": [
-                  "match", ["get", "nivel"],
-                  1, "#FFD000", 2, "#FF7A00", 3, "#FF3232", 4, "#9D6FFF", 5, "#8B0000",
-                  "#FF3232",
-                ],
-                "fill-opacity": 0.06,
-              },
-            });
-            // Dashed perimeter line — military style
-            map.addLayer({
-              id: "zonas-risco-line",
-              type: "line",
-              source: "zonas-risco",
-              paint: {
-                "line-color": [
-                  "match", ["get", "nivel"],
-                  1, "#FFD000", 2, "#FF7A00", 3, "#FF3232", 4, "#9D6FFF", 5, "#8B0000",
-                  "#FF3232",
-                ],
-                "line-opacity": 0.3,
-                "line-width": 1.2,
-                "line-dasharray": [3, 3],
-              },
+            // Use a heatmap source for each zone to get radial gradient effect
+            zonasDef.forEach((z, i) => {
+              const srcId = `zona-heat-${i}`;
+              const layerId = `zona-heat-layer-${i}`;
+              // Create a point at the center with weight
+              map.addSource(srcId, {
+                type: "geojson",
+                data: {
+                  type: "FeatureCollection",
+                  features: [{
+                    type: "Feature",
+                    geometry: { type: "Point", coordinates: z.center },
+                    properties: { weight: z.nivel },
+                  }],
+                },
+              });
+              map.addLayer({
+                id: layerId,
+                type: "heatmap",
+                source: srcId,
+                paint: {
+                  "heatmap-weight": 1,
+                  "heatmap-intensity": 0.6,
+                  "heatmap-color": [
+                    "interpolate", ["linear"], ["heatmap-density"],
+                    0,   "rgba(0,0,0,0)",
+                    0.1, `${z.color}08`,
+                    0.3, `${z.color}18`,
+                    0.5, `${z.color}30`,
+                    0.7, `${z.color}50`,
+                    1,   `${z.color}80`,
+                  ],
+                  "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, z.r * 60, 13, z.r * 120, 16, z.r * 200],
+                  "heatmap-opacity": 0.5,
+                },
+              });
+
+              // Dashed perimeter ring
+              const ring = turf.circle(z.center, z.r, { steps: 64, units: "kilometers" });
+              const ringSrcId = `zona-ring-${i}`;
+              map.addSource(ringSrcId, { type: "geojson", data: ring });
+              map.addLayer({
+                id: `zona-ring-line-${i}`,
+                type: "line",
+                source: ringSrcId,
+                paint: {
+                  "line-color": z.color,
+                  "line-opacity": 0.2,
+                  "line-width": 0.8,
+                  "line-dasharray": [4, 4],
+                },
+              });
             });
 
             // ── Build heatmap layers per type ──
