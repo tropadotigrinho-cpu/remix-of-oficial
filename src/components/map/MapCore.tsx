@@ -129,22 +129,29 @@ const MapCore = memo(
               id: "user-radius-fill",
               type: "fill",
               source: "user-radius",
-              paint: { "fill-color": "#3D8EFF", "fill-opacity": 0.04 },
+              paint: { "fill-color": "#00D4FF", "fill-opacity": 0.03 },
+            });
+            map.addLayer({
+              id: "user-radius-line",
+              type: "line",
+              source: "user-radius",
+              paint: { "line-color": "#00D4FF", "line-opacity": 0.15, "line-width": 1, "line-dasharray": [4, 4] },
             });
 
-            // ── Zonas de risco (Campinas bairros) ──
+            // ── Zonas de risco (Campinas) — military dashed perimeters ──
             const zonasRisco: GeoJSON.FeatureCollection = {
               type: "FeatureCollection",
               features: [
-                turf.circle([-47.060, -22.900], 0.6, { steps: 48, units: "kilometers", properties: { nivel: 4, nome: "Centro" } }),
-                turf.circle([-47.045, -22.895], 0.5, { steps: 48, units: "kilometers", properties: { nivel: 3, nome: "Cambuí" } }),
-                turf.circle([-47.040, -22.875], 0.7, { steps: 48, units: "kilometers", properties: { nivel: 2, nome: "Taquaral" } }),
-                turf.circle([-47.085, -22.860], 0.4, { steps: 48, units: "kilometers", properties: { nivel: 5, nome: "Barão Geraldo" } }),
-                turf.circle([-47.070, -22.910], 0.55, { steps: 48, units: "kilometers", properties: { nivel: 1, nome: "Bosque" } }),
+                turf.circle([-47.060, -22.900], 0.6, { steps: 64, units: "kilometers", properties: { nivel: 4, nome: "Centro" } }),
+                turf.circle([-47.045, -22.895], 0.5, { steps: 64, units: "kilometers", properties: { nivel: 3, nome: "Cambuí" } }),
+                turf.circle([-47.040, -22.875], 0.7, { steps: 64, units: "kilometers", properties: { nivel: 2, nome: "Taquaral" } }),
+                turf.circle([-47.085, -22.860], 0.4, { steps: 64, units: "kilometers", properties: { nivel: 5, nome: "Barão Geraldo" } }),
+                turf.circle([-47.070, -22.910], 0.55, { steps: 64, units: "kilometers", properties: { nivel: 1, nome: "Bosque" } }),
               ],
             };
 
             map.addSource("zonas-risco", { type: "geojson", data: zonasRisco });
+            // Subtle fill
             map.addLayer({
               id: "zonas-risco-fill",
               type: "fill",
@@ -155,7 +162,23 @@ const MapCore = memo(
                   1, "#FFD000", 2, "#FF7A00", 3, "#FF3232", 4, "#9D6FFF", 5, "#8B0000",
                   "#FF3232",
                 ],
-                "fill-opacity": 0.1,
+                "fill-opacity": 0.06,
+              },
+            });
+            // Dashed perimeter line — military style
+            map.addLayer({
+              id: "zonas-risco-line",
+              type: "line",
+              source: "zonas-risco",
+              paint: {
+                "line-color": [
+                  "match", ["get", "nivel"],
+                  1, "#FFD000", 2, "#FF7A00", 3, "#FF3232", 4, "#9D6FFF", 5, "#8B0000",
+                  "#FF3232",
+                ],
+                "line-opacity": 0.3,
+                "line-width": 1.2,
+                "line-dasharray": [3, 3],
               },
             });
 
