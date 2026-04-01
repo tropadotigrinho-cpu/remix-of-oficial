@@ -1,5 +1,3 @@
-import { D } from "@/components/ironguard/constants";
-
 interface MapControlsProps {
   modo: "2d" | "3d";
   isPro: boolean;
@@ -25,32 +23,31 @@ export default function MapControls({
   gpsActive = false,
 }: MapControlsProps) {
   const btnBase: React.CSSProperties = {
-    width: 36,
-    height: 36,
-    borderRadius: "50%",
-    background: "rgba(11,16,24,0.7)",
-    border: "1px solid transparent",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    background: "rgba(15,21,32,0.75)",
+    backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    border: "1px solid rgba(255,255,255,0.06)",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    transition: "all 0.2s",
+    transition: "all 0.2s ease",
     fontFamily: "inherit",
-    fontSize: 14,
+    fontSize: 13,
     padding: 0,
-    color: "rgba(238,242,250,0.35)",
-    boxShadow: "none",
+    color: "rgba(238,242,250,0.4)",
   };
 
-  const activeStyle = (color: string, active: boolean): React.CSSProperties =>
-    active
+  const active = (on: boolean): React.CSSProperties =>
+    on
       ? {
           ...btnBase,
-          color,
-          background: `${color}0A`,
-          boxShadow: `0 0 10px ${color}30`,
+          color: "rgba(238,242,250,0.9)",
+          background: "rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.12)",
         }
       : btnBase;
 
@@ -63,7 +60,7 @@ export default function MapControls({
         zIndex: 10,
         display: "flex",
         flexDirection: "column",
-        gap: 8,
+        gap: 6,
       }}
     >
       {/* Compass */}
@@ -74,51 +71,35 @@ export default function MapControls({
           viewBox="0 0 20 20"
           style={{ transform: `rotate(${-compassBearing}deg)`, transition: "transform 0.3s" }}
         >
-          <path d="M10 2L13 10L10 8L7 10L10 2Z" fill="#FF3232" />
-          <path d="M10 18L7 10L10 12L13 10L10 18Z" fill="rgba(238,242,250,0.2)" />
+          <path d="M10 2L13 10L10 8L7 10L10 2Z" fill="#FF4444" />
+          <path d="M10 18L7 10L10 12L13 10L10 18Z" fill="rgba(238,242,250,0.15)" />
         </svg>
       </button>
 
-      {/* 3D Toggle */}
-      <button
-        style={activeStyle(D.blue, modo === "3d")}
-        onClick={onToggle3D}
-        title="Modo 3D"
-      >
+      {/* 3D */}
+      <button style={active(modo === "3d")} onClick={onToggle3D} title="Modo 3D">
         <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>3D</span>
       </button>
 
-      {/* Heatmap toggle */}
-      <button
-        style={activeStyle(D.red, heatmapActive)}
-        onClick={onToggleHeatmap}
-        title={heatmapActive ? "Desativar raios" : "Ativar raios"}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      {/* Heatmap */}
+      <button style={active(heatmapActive)} onClick={onToggleHeatmap} title={heatmapActive ? "Ocultar raios" : "Mostrar raios"}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="12" cy="12" r="3" />
-          <circle cx="12" cy="12" r="7" opacity="0.4" />
-          <circle cx="12" cy="12" r="10" opacity="0.2" />
+          <circle cx="12" cy="12" r="7" opacity="0.35" />
+          <circle cx="12" cy="12" r="10" opacity="0.15" />
         </svg>
       </button>
 
       {/* GPS */}
-      <button
-        style={activeStyle(D.blue, gpsActive)}
-        onClick={onCentralizar}
-        title="Minha localização"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <button style={active(gpsActive)} onClick={onCentralizar} title="Localização">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="12" cy="12" r="3" />
           <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
         </svg>
       </button>
 
       {/* Chat */}
-      <button
-        style={{ ...btnBase, color: "rgba(0,209,255,0.5)" }}
-        onClick={onOpenChat}
-        title="Chat IA"
-      >
+      <button style={btnBase} onClick={onOpenChat} title="Chat IA">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
