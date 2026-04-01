@@ -5,6 +5,7 @@ import { SearchIc, CloseIc } from "./icons";
 export default function FeedPage() {
   const [activeFilters, setActiveFilters] = useState(DEFAULT_ON);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const reelsRef = useRef<HTMLDivElement>(null);
 
   const filteredPosts = FEED_POSTS.filter((p) => {
@@ -27,55 +28,67 @@ export default function FeedPage() {
       {/* Top overlay with search & filters */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, zIndex: 10,
-        background: "linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 70%, transparent 100%)",
-        padding: "48px 14px 16px",
+        background: "linear-gradient(rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 80%, transparent 100%)",
+        padding: "48px 14px 12px",
       }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: -0.5 }}>Feed</h1>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <h1 style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: -0.5 }}>Ocorrências</h1>
+            <button
+              onClick={() => setShowFilters((p) => !p)}
+              style={{
+                width: 30, height: 30, borderRadius: 15, background: showFilters ? "rgba(0,212,255,0.15)" : "rgba(255,255,255,0.08)",
+                border: showFilters ? "1px solid rgba(0,212,255,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                color: showFilters ? "#00D4FF" : "rgba(255,255,255,0.5)", fontSize: 14, transition: "all .15s",
+              }}
+            >
+              ⚙
+            </button>
+          </div>
           <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>
-            {filteredPosts.length} ocorrências
+            {filteredPosts.length} posts
           </span>
         </div>
 
-        {/* Search */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "0 10px", height: 36, borderRadius: 18,
-          background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 8,
-        }}>
-          <span style={{ color: "rgba(255,255,255,0.3)", display: "flex" }}><SearchIc /></span>
-          <input
-            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar..."
-            style={{
-              flex: 1, background: "none", border: "none", outline: "none", color: "#fff",
-              fontSize: 12, fontFamily: "inherit",
-            }}
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 0, display: "flex" }}>
-              <CloseIc />
-            </button>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div style={{ display: "flex", gap: 5, overflowX: "auto", paddingBottom: 2 }}>
-          {ALL_FILTERS.slice(0, 10).map((f) => {
-            const on = activeFilters.includes(f.id);
-            return (
-              <button key={f.id} onClick={() => toggleFilter(f.id)} style={{
-                flexShrink: 0, padding: "4px 9px", borderRadius: 14, fontSize: 10, fontWeight: on ? 600 : 400,
-                background: on ? `${f.c}20` : "rgba(255,255,255,0.06)",
-                border: `1px solid ${on ? f.c + "40" : "rgba(255,255,255,0.05)"}`,
-                color: on ? f.c : "rgba(255,255,255,0.4)", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 3,
-                whiteSpace: "nowrap", fontFamily: "inherit", transition: "all .15s",
-              }}>
-                <span>{f.ic}</span>{f.lb.split(" ")[0]}
-              </button>
-            );
-          })}
-        </div>
+        {/* Expandable filters */}
+        {showFilters && (
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "0 10px", height: 34, borderRadius: 17,
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.05)",
+            }}>
+              <span style={{ color: "rgba(255,255,255,0.3)", display: "flex" }}><SearchIc /></span>
+              <input
+                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar bairro, tipo..."
+                style={{ flex: 1, background: "none", border: "none", outline: "none", color: "#fff", fontSize: 11, fontFamily: "inherit" }}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", padding: 0, display: "flex" }}>
+                  <CloseIc />
+                </button>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 5, overflowX: "auto", paddingBottom: 2 }}>
+              {ALL_FILTERS.slice(0, 10).map((f) => {
+                const on = activeFilters.includes(f.id);
+                return (
+                  <button key={f.id} onClick={() => toggleFilter(f.id)} style={{
+                    flexShrink: 0, padding: "4px 9px", borderRadius: 14, fontSize: 10, fontWeight: on ? 600 : 400,
+                    background: on ? `${f.c}20` : "rgba(255,255,255,0.06)",
+                    border: `1px solid ${on ? f.c + "40" : "rgba(255,255,255,0.05)"}`,
+                    color: on ? f.c : "rgba(255,255,255,0.4)", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 3,
+                    whiteSpace: "nowrap", fontFamily: "inherit", transition: "all .15s",
+                  }}>
+                    <span>{f.ic}</span>{f.lb.split(" ")[0]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Reels content — full screen scroll snap */}

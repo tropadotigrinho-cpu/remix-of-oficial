@@ -138,65 +138,54 @@ const MapCore = memo(
               paint: { "line-color": "#00D4FF", "line-opacity": 0.15, "line-width": 1, "line-dasharray": [4, 4] },
             });
 
-            // ── Zonas de risco — concentric gradient overlay (not solid) ──
+            // ── Zonas de risco — somente roubo de carro/moto, gradiente concêntrico visível ──
             const zonasDef = [
-              { center: [-47.060, -22.900] as [number, number], r: 0.6, nivel: 4, nome: "Centro", color: "#9D6FFF" },
-              { center: [-47.045, -22.895] as [number, number], r: 0.5, nivel: 3, nome: "Cambuí", color: "#FF3232" },
-              { center: [-47.040, -22.875] as [number, number], r: 0.7, nivel: 2, nome: "Taquaral", color: "#FF7A00" },
-              { center: [-47.085, -22.860] as [number, number], r: 0.4, nivel: 5, nome: "Barão Geraldo", color: "#8B0000" },
-              { center: [-47.070, -22.910] as [number, number], r: 0.55, nivel: 1, nome: "Bosque", color: "#FFD000" },
+              { center: [-47.060, -22.900] as [number, number], r: 0.8, density: 5, nome: "Centro" },
+              { center: [-47.045, -22.895] as [number, number], r: 0.6, density: 4, nome: "Cambuí" },
+              { center: [-47.040, -22.875] as [number, number], r: 0.5, density: 2, nome: "Taquaral" },
+              { center: [-47.085, -22.860] as [number, number], r: 0.7, density: 5, nome: "Barão Geraldo" },
+              { center: [-47.070, -22.910] as [number, number], r: 0.45, density: 3, nome: "Bosque" },
             ];
 
-            // Use a heatmap source for each zone to get radial gradient effect
+            // Each zone gets multiple concentric points for a denser gradient core
             zonasDef.forEach((z, i) => {
               const srcId = `zona-heat-${i}`;
               const layerId = `zona-heat-layer-${i}`;
-              // Create a point at the center with weight
+              // Create concentric points — more points at center = denser core
+              const pts: GeoJSON.Feature[] = [];
+              pts.push({ type: "Feature", geometry: { type: "Point", coordinates: z.center }, properties: { w: z.density } });
+              // Add ring of secondary points for spread
+              for (let angle = 0; angle < 360; angle += 60) {
+                const offset = z.r * 0.3 / 111;
+                const lng = z.center[0] + offset * Math.cos((angle * Math.PI) / 180);
+                const lat = z.center[1] + offset * Math.sin((angle * Math.PI) / 180);
+                pts.push({ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: { w: z.density * 0.5 } });
+              }
+
               map.addSource(srcId, {
                 type: "geojson",
-                data: {
-                  type: "FeatureCollection",
-                  features: [{
-                    type: "Feature",
-                    geometry: { type: "Point", coordinates: z.center },
-                    properties: { weight: z.nivel },
-                  }],
-                },
+                data: { type: "FeatureCollection", features: pts },
               });
               map.addLayer({
                 id: layerId,
                 type: "heatmap",
                 source: srcId,
                 paint: {
-                  "heatmap-weight": 1,
-                  "heatmap-intensity": 0.6,
+                  "heatmap-weight": ["get", "w"],
+                  "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.6, 14, 1.2],
                   "heatmap-color": [
                     "interpolate", ["linear"], ["heatmap-density"],
-                    0,   "rgba(0,0,0,0)",
-                    0.1, `${z.color}08`,
-                    0.3, `${z.color}18`,
-                    0.5, `${z.color}30`,
-                    0.7, `${z.color}50`,
-                    1,   `${z.color}80`,
+                    0,    "rgba(0,0,0,0)",
+                    0.1,  "rgba(255,50,50,0.05)",
+                    0.25, "rgba(255,50,50,0.15)",
+                    0.4,  "rgba(255,40,40,0.3)",
+                    0.55, "rgba(255,30,30,0.45)",
+                    0.7,  "rgba(200,20,20,0.6)",
+                    0.85, "rgba(160,10,10,0.75)",
+                    1,    "rgba(130,0,0,0.9)",
                   ],
-                  "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, z.r * 60, 13, z.r * 120, 16, z.r * 200],
-                  "heatmap-opacity": 0.5,
-                },
-              });
-
-              // Dashed perimeter ring
-              const ring = turf.circle(z.center, z.r, { steps: 64, units: "kilometers" });
-              const ringSrcId = `zona-ring-${i}`;
-              map.addSource(ringSrcId, { type: "geojson", data: ring });
-              map.addLayer({
-                id: `zona-ring-line-${i}`,
-                type: "line",
-                source: ringSrcId,
-                paint: {
-                  "line-color": z.color,
-                  "line-opacity": 0.2,
-                  "line-width": 0.8,
-                  "line-dasharray": [4, 4],
+                  "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, z.r * 80, 13, z.r * 160, 16, z.r * 280],
+                  "heatmap-opacity": 0.75,
                 },
               });
             });
