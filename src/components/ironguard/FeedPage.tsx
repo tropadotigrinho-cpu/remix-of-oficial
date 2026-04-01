@@ -5,6 +5,7 @@ import { SearchIc, CloseIc } from "./icons";
 export default function FeedPage() {
   const [activeFilters, setActiveFilters] = useState(DEFAULT_ON);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const reelsRef = useRef<HTMLDivElement>(null);
 
   const filteredPosts = FEED_POSTS.filter((p) => {
