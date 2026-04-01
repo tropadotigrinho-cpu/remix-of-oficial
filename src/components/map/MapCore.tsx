@@ -38,22 +38,22 @@ interface MapCoreProps {
   userCoords?: [number, number] | null;
 }
 
-// Heatmap color ramps per occurrence type
-const HEATMAP_COLORS: Record<string, string> = {
-  roubo: "#FF3232",
-  assalto: "#FF2D78",
-  acidente: "#FF7A00",
-  alagamento: "#3D8EFF",
-  perigo: "#FFD000",
-  furto: "#9D6FFF",
-  blitz: "#3D8EFF",
-  transito: "#FF7A00",
-  obra: "#FFD000",
-  incendio: "#FF3232",
-  veiculo_suspeito: "#FF2D78",
-  ajuda: "#00D4C8",
-  caça: "#22D46A",
-  zona: "#9D6FFF",
+// Subtle, desaturated colors per type — Uber/99 style
+const HEATMAP_COLORS: Record<string, [number, number, number]> = {
+  roubo:            [255, 60, 60],
+  assalto:          [255, 55, 120],
+  acidente:         [255, 140, 40],
+  alagamento:       [60, 140, 255],
+  perigo:           [255, 200, 40],
+  furto:            [140, 100, 255],
+  blitz:            [60, 140, 255],
+  transito:         [255, 140, 40],
+  obra:             [255, 200, 40],
+  incendio:         [255, 60, 60],
+  veiculo_suspeito: [255, 55, 120],
+  ajuda:            [0, 200, 190],
+  caça:             [34, 200, 106],
+  zona:             [140, 100, 255],
 };
 
 const MapCore = memo(
@@ -73,7 +73,6 @@ const MapCore = memo(
         },
         setHeatmapVisible: (vis) => {
           if (!mapRef.current) return;
-          // Toggle all heatmap layers
           heatLayersRef.current.forEach((id) => {
             try {
               mapRef.current!.setLayoutProperty(id, "visibility", vis ? "visible" : "none");
@@ -119,7 +118,7 @@ const MapCore = memo(
           map.on("load", () => {
             readyRef.current = true;
 
-            // ── User radius circle ──
+            // ── User radius — subtle, no dashes ──
             const radiusM = userPlan === "pro" ? RAIO_PRO_M : RAIO_FREE_M;
             const center = userCoords || SP_CENTER;
             const circle = turf.circle(center, radiusM / 1000, { steps: 64, units: "kilometers" });
@@ -129,37 +128,37 @@ const MapCore = memo(
               id: "user-radius-fill",
               type: "fill",
               source: "user-radius",
-              paint: { "fill-color": "#00D4FF", "fill-opacity": 0.03 },
+              paint: { "fill-color": "#3D8EFF", "fill-opacity": 0.04 },
             });
             map.addLayer({
               id: "user-radius-line",
               type: "line",
               source: "user-radius",
-              paint: { "line-color": "#00D4FF", "line-opacity": 0.15, "line-width": 1, "line-dasharray": [4, 4] },
+              paint: { "line-color": "#3D8EFF", "line-opacity": 0.12, "line-width": 0.8 },
             });
 
-            // ── Zonas de risco — somente roubo de carro/moto, gradiente concêntrico visível ──
+            // ── Risk zones — soft radial gradient heatmap ──
             const zonasDef = [
-              { center: [-47.060, -22.900] as [number, number], r: 0.8, density: 5, nome: "Centro" },
-              { center: [-47.045, -22.895] as [number, number], r: 0.6, density: 4, nome: "Cambuí" },
-              { center: [-47.040, -22.875] as [number, number], r: 0.5, density: 2, nome: "Taquaral" },
-              { center: [-47.085, -22.860] as [number, number], r: 0.7, density: 5, nome: "Barão Geraldo" },
-              { center: [-47.070, -22.910] as [number, number], r: 0.45, density: 3, nome: "Bosque" },
+              { center: [-47.060, -22.900] as [number, number], r: 1.0, density: 6 },
+              { center: [-47.045, -22.895] as [number, number], r: 0.7, density: 4 },
+              { center: [-47.040, -22.875] as [number, number], r: 0.5, density: 2 },
+              { center: [-47.085, -22.860] as [number, number], r: 0.8, density: 5 },
+              { center: [-47.070, -22.910] as [number, number], r: 0.5, density: 3 },
             ];
 
-            // Each zone gets multiple concentric points for a denser gradient core
             zonasDef.forEach((z, i) => {
               const srcId = `zona-heat-${i}`;
               const layerId = `zona-heat-layer-${i}`;
-              // Create concentric points — more points at center = denser core
               const pts: GeoJSON.Feature[] = [];
+              // Dense core with falloff rings
               pts.push({ type: "Feature", geometry: { type: "Point", coordinates: z.center }, properties: { w: z.density } });
-              // Add ring of secondary points for spread
-              for (let angle = 0; angle < 360; angle += 60) {
-                const offset = z.r * 0.3 / 111;
-                const lng = z.center[0] + offset * Math.cos((angle * Math.PI) / 180);
-                const lat = z.center[1] + offset * Math.sin((angle * Math.PI) / 180);
-                pts.push({ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: { w: z.density * 0.5 } });
+              for (let ring = 1; ring <= 3; ring++) {
+                for (let angle = 0; angle < 360; angle += 45) {
+                  const offset = z.r * ring * 0.15 / 111;
+                  const lng = z.center[0] + offset * Math.cos((angle * Math.PI) / 180);
+                  const lat = z.center[1] + offset * Math.sin((angle * Math.PI) / 180);
+                  pts.push({ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: { w: z.density * (1 - ring * 0.25) } });
+                }
               }
 
               map.addSource(srcId, {
@@ -172,25 +171,25 @@ const MapCore = memo(
                 source: srcId,
                 paint: {
                   "heatmap-weight": ["get", "w"],
-                  "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.6, 14, 1.2],
+                  "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.5, 14, 1.0],
                   "heatmap-color": [
                     "interpolate", ["linear"], ["heatmap-density"],
                     0,    "rgba(0,0,0,0)",
-                    0.1,  "rgba(255,50,50,0.05)",
-                    0.25, "rgba(255,50,50,0.15)",
-                    0.4,  "rgba(255,40,40,0.3)",
-                    0.55, "rgba(255,30,30,0.45)",
-                    0.7,  "rgba(200,20,20,0.6)",
-                    0.85, "rgba(160,10,10,0.75)",
-                    1,    "rgba(130,0,0,0.9)",
+                    0.1,  "rgba(255,50,50,0.04)",
+                    0.25, "rgba(255,40,40,0.10)",
+                    0.45, "rgba(255,30,30,0.18)",
+                    0.65, "rgba(220,20,20,0.28)",
+                    0.8,  "rgba(180,10,10,0.38)",
+                    0.9,  "rgba(150,0,0,0.48)",
+                    1,    "rgba(120,0,0,0.55)",
                   ],
-                  "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, z.r * 80, 13, z.r * 160, 16, z.r * 280],
-                  "heatmap-opacity": 0.75,
+                  "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, z.r * 60, 13, z.r * 120, 16, z.r * 200],
+                  "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.9, 15, 0.6, 17, 0.4],
                 },
               });
             });
 
-            // ── Build heatmap layers per type ──
+            // ── Per-type heatmap ──
             buildHeatmapLayers(map, alertsGeoJSON);
 
             // ── Alert pins (clustered) ──
@@ -202,18 +201,18 @@ const MapCore = memo(
               clusterRadius: 50,
             });
 
-            // Clusters — minimal military style
+            // Clusters — clean pill style
             map.addLayer({
               id: "alert-clusters",
               type: "circle",
               source: "alert-pins",
               filter: ["has", "point_count"],
               paint: {
-                "circle-color": "rgba(0,0,0,0.5)",
-                "circle-radius": ["step", ["get", "point_count"], 18, 5, 24, 10, 30],
+                "circle-color": "rgba(15,21,32,0.85)",
+                "circle-radius": ["step", ["get", "point_count"], 16, 5, 20, 10, 26],
                 "circle-opacity": 1,
-                "circle-stroke-width": 1,
-                "circle-stroke-color": "rgba(0,212,255,0.4)",
+                "circle-stroke-width": 0.5,
+                "circle-stroke-color": "rgba(255,255,255,0.08)",
               },
             });
 
@@ -223,10 +222,10 @@ const MapCore = memo(
               source: "alert-pins",
               filter: ["has", "point_count"],
               layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11, "text-font": ["Open Sans Bold"] },
-              paint: { "text-color": "#00D4FF" },
+              paint: { "text-color": "rgba(238,242,250,0.7)" },
             });
 
-            // Pin — EMOJI ONLY, no colored circles
+            // Pin — emoji only, clean
             map.addLayer({
               id: "alert-unclustered-icon",
               type: "symbol",
@@ -234,21 +233,21 @@ const MapCore = memo(
               filter: ["!", ["has", "point_count"]],
               layout: {
                 "text-field": ["get", "icon"],
-                "text-size": 22,
+                "text-size": 20,
                 "text-allow-overlap": true,
                 "text-anchor": "center",
                 "text-offset": [0, 0],
               },
             });
 
-            // Invisible circle for click events on pins
+            // Invisible hit area
             map.addLayer({
               id: "alert-unclustered",
               type: "circle",
               source: "alert-pins",
               filter: ["!", ["has", "point_count"]],
               paint: {
-                "circle-radius": 16,
+                "circle-radius": 18,
                 "circle-color": "rgba(0,0,0,0)",
                 "circle-opacity": 0,
               },
@@ -294,9 +293,8 @@ const MapCore = memo(
         return () => { clearTimeout(moveTimeoutRef.current); };
       }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-      // Build military-style heatmap layers per occurrence type — concentric gradients
+      // Per-type heatmap — subtle ambient glow
       const buildHeatmapLayers = useCallback((map: maplibregl.Map, geojson?: GeoJSON.FeatureCollection) => {
-        // Remove old heatmap layers/sources
         heatLayersRef.current.forEach((id) => {
           try { map.removeLayer(id); } catch { /* */ }
           try { map.removeSource(id); } catch { /* */ }
@@ -305,7 +303,6 @@ const MapCore = memo(
 
         if (!geojson) return;
 
-        // Group features by type
         const byType: Record<string, GeoJSON.Feature[]> = {};
         geojson.features.forEach((f) => {
           const t = (f.properties as any)?.type || "unknown";
@@ -314,7 +311,8 @@ const MapCore = memo(
         });
 
         Object.entries(byType).forEach(([type, features]) => {
-          const color = HEATMAP_COLORS[type] || "#FF3232";
+          const rgb = HEATMAP_COLORS[type] || [255, 60, 60];
+          const [r, g, b] = rgb;
           const sourceId = `heatmap-${type}`;
           const layerId = `heatmap-layer-${type}`;
 
@@ -323,28 +321,26 @@ const MapCore = memo(
             data: { type: "FeatureCollection", features },
           });
 
-          // Military-grade heatmap: tight core → wide diffuse edge, low opacity
           map.addLayer({
             id: layerId,
             type: "heatmap",
             source: sourceId,
             maxzoom: 16,
             paint: {
-              "heatmap-weight": ["interpolate", ["linear"], ["get", "votes"], 0, 0.3, 6, 0.7, 12, 1],
-              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 13, 0.8, 16, 1.5],
+              "heatmap-weight": ["interpolate", ["linear"], ["get", "votes"], 0, 0.3, 6, 0.6, 12, 1],
+              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.3, 13, 0.6, 16, 1.0],
               "heatmap-color": [
                 "interpolate", ["linear"], ["heatmap-density"],
                 0,    "rgba(0,0,0,0)",
-                0.05, `${color}08`,
-                0.15, `${color}15`,
-                0.3,  `${color}28`,
-                0.5,  `${color}45`,
-                0.7,  `${color}70`,
-                0.85, `${color}A0`,
-                1,    `${color}D0`,
+                0.08, `rgba(${r},${g},${b},0.03)`,
+                0.2,  `rgba(${r},${g},${b},0.08)`,
+                0.4,  `rgba(${r},${g},${b},0.15)`,
+                0.6,  `rgba(${r},${g},${b},0.22)`,
+                0.8,  `rgba(${r},${g},${b},0.30)`,
+                1,    `rgba(${r},${g},${b},0.40)`,
               ],
-              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, 30, 13, 55, 16, 80],
-              "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.7, 14, 0.5, 16, 0.35],
+              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, 25, 13, 45, 16, 70],
+              "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.8, 14, 0.6, 16, 0.4],
             },
           });
 
@@ -359,8 +355,6 @@ const MapCore = memo(
         try {
           const pinSource = mapRef.current.getSource("alert-pins") as maplibregl.GeoJSONSource;
           pinSource?.setData(alertsGeoJSON);
-
-          // Rebuild heatmap layers
           buildHeatmapLayers(mapRef.current, alertsGeoJSON);
         } catch { /* sources may not exist yet */ }
       }, [alertsGeoJSON, buildHeatmapLayers]);
